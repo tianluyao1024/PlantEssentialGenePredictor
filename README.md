@@ -86,7 +86,14 @@ pip install -r requirements.txt
 streamlit run webapp/app.py
 ```
 
-The app accepts a processed `.npz` feature matrix matching the released common6751 schema. It does not download raw GO/PPI/expression data or run PLM embedding extraction online.
+The app currently supports:
+
+- full-model prediction from processed `.npz` feature matrices matching the released common6751 schema;
+- browsing and downloading the released Arabidopsis and rice prediction tables;
+- explicit public caching of final species-level prediction results;
+- FASTA upload validation for the future annotation-light model.
+
+The current release does not download raw GO/PPI/expression data or run PLM embedding extraction online. Raw FASTA probability prediction should be enabled after training and releasing the annotation-light sequence model. See `docs/webapp_deployment.md` for the local-server design, temporary-file cleanup policy and public-cache workflow.
 
 ## Feature and Label Notes
 

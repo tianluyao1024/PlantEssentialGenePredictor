@@ -3,4 +3,9 @@ __pycache__/
 .ipynb_checkpoints/
 .streamlit/secrets.toml
 webapp/_uploaded_features.npz
+webapp_data/jobs/*
+webapp_data/public_predictions/*
+!webapp_data/.gitkeep
+!webapp_data/jobs/.gitkeep
+!webapp_data/public_predictions/.gitkeep
 *.log
