@@ -1,163 +1,196 @@
-# Input feature preparation guide
+# Raw input and feature preparation guide
 
-All uploaded files must use the same stable gene ID in the first column or FASTA
-header. Transcript IDs are allowed, but the final model input is one
-protein-coding transcript per gene. If multiple transcripts are present, use the
-longest CDS/protein-coding transcript and report that choice in the metadata.
+The web tool is designed for raw biological data upload. Users do not need to
+manually construct the final model feature matrix. The server validates input
+files, checks gene IDs, extracts features, concatenates feature blocks in the
+released schema and then applies the selected model.
 
-## Model input tiers
+All tabular files must be tab-separated (`.tsv`). Gene IDs are case-sensitive
+and must be consistent across FASTA, GFF3, GO, PPI, expression and domain files.
 
-| Tier | Required user input | Model intention |
-|---|---|---|
-| Basic sequence mode | CDS FASTA and protein FASTA | FASTA-derived sequence features plus PLM embeddings. This model must be trained separately before public sequence-only prediction is enabled. |
-| Sequence + GO | CDS/protein FASTA and GO annotation table | Use sequence/PLM features plus functional annotation. |
-| Sequence + PPI | CDS/protein FASTA and PPI edge or degree table | Use sequence/PLM features plus network degree features. |
-| Sequence + expression | CDS/protein FASTA and expression matrix or expression summary | Use sequence/PLM features plus expression breadth/variation summaries. |
-| Full feature mode | Processed `common6751` `.npz` file, or all raw sources needed to build it | Uses the manuscript full model. |
+## Model choices
 
-Do not treat missing GO, PPI or expression values as biological zeros unless the
-source explicitly means zero. Missing annotation is different from absence of
-function, interaction or expression.
+The website exposes three main model families.
 
-## Common ID rules
+| Model family | Intended use |
+|---|---|
+| Arabidopsis single-species model | Prediction for Arabidopsis features using the Arabidopsis-trained model. |
+| Rice single-species model | Prediction for rice features using the rice-trained model. |
+| Joint Arabidopsis-rice model | General plant prioritization using the joint model. This model also has feature-profile variants for different available raw-data combinations. |
 
-- FASTA headers should start with the gene ID: `>Gene001`.
-- All tables must contain a `gene_id` column.
-- IDs are case-sensitive unless a species-specific mapper is documented.
-- Duplicate `gene_id` values are not allowed in final feature tables.
-- If raw files contain isoforms, provide a `transcript_id` column and keep only
-  the longest protein-coding transcript per `gene_id`.
+For the joint model, users may choose the feature profile that matches the files
+they provide:
 
-## Feature groups
+- sequence + PLM;
+- sequence + PLM + GO;
+- sequence + PLM + PPI;
+- sequence + PLM + expression;
+- sequence + PLM + GO + PPI;
+- sequence + PLM + GO + expression;
+- sequence + PLM + PPI + expression;
+- sequence + PLM + GO + PPI + expression;
+- advanced full uploaded-feature profile.
 
-### Sequence and protein composition
+This avoids treating missing GO, PPI or expression annotations as true biological
+zeros.
 
-Input:
+## Core files
 
-- `cds.fasta`
-- `protein.fasta`
+These files are expected for the standard raw-data workflow.
 
-Processing:
+### `protein.fasta`
 
-- CDS length and protein length are counted after removing whitespace.
-- GC, AT, GC skew, AT skew and GC3 are computed from CDS.
-- A/C/G/T frequencies are computed from CDS.
-- Amino-acid frequencies are computed from protein sequence.
-- Amino-acid group frequencies are computed for hydrophobic, polar, positive,
-  negative, small, aromatic and sulfur-containing amino acids.
-- Protein molecular weight, GRAVY, isoelectric point, aromaticity and
-  instability index are computed from protein sequence.
+Required for protein length, amino-acid composition, protein physicochemical
+features and protein language model embeddings.
 
-### Gene span and gene structure
+```text
+>Gene001
+MASLTVAAAGG
+>Gene002
+MKRAVLPLGG
+```
 
-Input:
+### `cds.fasta`
 
-- `annotation.gff3`
+Strongly recommended for CDS length, GC content, GC skew, GC3 and nucleotide
+composition.
 
-Processing:
+```text
+>Gene001
+ATGGCTTCTCTAACCGTTGCTGCTGCTGGTGGT
+>Gene002
+ATGAAACGTGCTGTTCTTCCGCTTGGTGGT
+```
 
-- `gene_span_bp = end - start + 1` for the gene feature.
-- Transcript/CDS records are linked through `ID` and `Parent` attributes.
-- If multiple protein-coding transcripts exist, the longest CDS transcript is
-  selected before feature extraction.
+### `annotation.gff3`
+
+Strongly recommended for gene span and transcript structure. If multiple
+transcripts exist, the backend uses GFF3 `ID` and `Parent` relationships to
+select one longest protein-coding transcript per gene.
+
+```text
+Chr1    source    gene    1000    3500    .    +    .    ID=Gene001
+Chr1    source    mRNA    1000    3500    .    +    .    ID=Gene001.1;Parent=Gene001
+Chr1    source    CDS     1100    1400    .    +    0    Parent=Gene001.1
+```
+
+## Optional annotation files
 
 ### GO annotation
 
-Input:
+File name suggestion: `go_annotation.tsv`
 
-- `go_annotation.tsv` with columns `gene_id` and `go_id`.
+Required columns:
 
-Processing:
-
-- GO IDs are collapsed into the GO summary features used by the common model,
-  including development, stress response, translation, ribosome, nucleic-acid
-  binding and other curated GO groups.
-- A GO feature is encoded as present/absent for each gene after propagating or
-  mapping terms to the curated summary categories used in the model.
-
-### PPI or STRING network features
-
-Input options:
-
-- edge table: `gene_a`, `gene_b`, `score`;
-- or degree table: `gene_id`, `string_network_connections_400`,
-  `string_network_connections_700`.
+```text
+gene_id    go_id
+Gene001    GO:0009790
+Gene001    GO:0006950
+Gene002    GO:0006412
+```
 
 Processing:
 
-- `string_network_connections_400`: number of interaction partners with score
-  at least 400.
-- `string_network_connections_700`: number of interaction partners with score
-  at least 700.
-- Self-loops are ignored and undirected duplicate edges are collapsed.
+- GO IDs are mapped to the curated GO summary groups used by the model.
+- A GO summary feature is encoded per gene after term mapping.
+- Missing GO annotation is treated as missing annotation, not as evidence of no
+  function.
 
-### Expression features
+### PPI edge list
 
-Input options:
+File name suggestion: `ppi_edges.tsv`
 
-- expression matrix: `gene_id`, followed by sample columns;
-- or expression summary: `gene_id`, `median_expression`,
-  `expression_variation`, `expression_breadth`, optional
-  `expression_module_size`.
+Required columns:
 
-Processing:
-
-- Median expression is computed across samples.
-- Expression variation is computed as a normalized dispersion statistic across
-  samples.
-- Expression breadth is the fraction of samples where expression is above the
-  selected detection threshold.
-- Co-expression module size requires a precomputed module assignment or
-  co-expression workflow.
-
-### Paralog and homolog summaries
-
-Input:
-
-- whole-proteome FASTA and, for tandem duplication, GFF3.
+```text
+gene_a    gene_b    score
+Gene001   Gene002   850
+Gene001   Gene003   420
+Gene002   Gene004   760
+```
 
 Processing:
 
-- Within-species paralogs are computed from all-vs-all protein similarity.
-- Gene family size, singleton status, maximum paralog percentage identity and
-  top paralog bitscore are summarized per gene.
-- Tandem duplicate status requires genomic coordinates.
-- Cross-species homolog features require reference proteomes and a documented
-  homology search.
+- The network is treated as undirected.
+- Self-loops are removed.
+- Duplicate undirected edges are collapsed.
+- `string_network_connections_400` is the number of interaction partners with
+  `score >= 400`.
+- `string_network_connections_700` is the number of interaction partners with
+  `score >= 700`.
+- If users do not have confidence scores, they may set all scores to `1000`.
 
-### Domain features
+Only this edge-list format is supported for PPI upload.
 
-Input:
+### Expression matrix
 
-- `domain_annotation.tsv` with columns `gene_id`, `domain_id`, `source`.
+File name suggestion: `expression_matrix.tsv`
+
+Required format:
+
+```text
+gene_id    sample_1    sample_2    sample_3
+Gene001    12.4        8.9         0.0
+Gene002    0.0         0.2         4.1
+Gene003    25.1        21.7        19.8
+```
 
 Processing:
 
-- `domain_number`: number of unique domains per gene.
-- `pfam_domain_number`: number of unique Pfam domains per gene.
+- Rows are genes and columns are samples.
+- TPM, FPKM or normalized counts are recommended.
+- Raw read counts are not recommended unless users have already normalized them.
+- The backend computes median expression, expression variation and expression
+  breadth.
+- `expression_module_size` is not computed in the basic web workflow unless a
+  future co-expression module workflow is enabled.
 
-### PLM embeddings
+Only matrix upload is supported for expression upload.
 
-Input:
+### Domain annotation
 
-- protein FASTA.
+File name suggestion: `domain_annotation.tsv`
+
+Required columns:
+
+```text
+gene_id    domain_id    source
+Gene001    PF00069      Pfam
+Gene001    PF07714      Pfam
+Gene002    PF00001      Pfam
+```
 
 Processing:
 
-- ESM2, ProtBERT and ProtT5 embeddings are extracted from amino-acid sequences.
-- Special tokens and padding are excluded from pooling.
-- Mean and max pooling are combined as in the manuscript feature pipeline.
-- Protein-level embedding blocks are L2-normalized before model training.
+- `domain_number` is the number of unique domains per gene.
+- `pfam_domain_number` is the number of unique Pfam domains per gene.
+
+## Feature extraction summary
+
+| Feature group | Raw input | Processing |
+|---|---|---|
+| CDS composition | `cds.fasta` | CDS length, GC, AT, GC skew, AT skew, GC3 and nucleotide frequencies. |
+| Protein composition | `protein.fasta` | Protein length, amino-acid frequencies and amino-acid group frequencies. |
+| Physicochemical features | `protein.fasta` | Molecular weight, GRAVY, isoelectric point, aromaticity and instability index. |
+| Gene structure | `annotation.gff3` | Gene span and transcript-to-gene mapping for longest transcript selection. |
+| GO | `go_annotation.tsv` | GO IDs collapsed into curated GO summary categories. |
+| PPI | `ppi_edges.tsv` | Degree features at score thresholds 400 and 700. |
+| Expression | `expression_matrix.tsv` | Median expression, expression variation and expression breadth. |
+| Domain | `domain_annotation.tsv` | Unique domain count and Pfam domain count. |
+| Within-species paralog features | whole-proteome `protein.fasta` plus optional `annotation.gff3` | All-vs-all protein similarity and genomic position summaries. |
+| PLM embeddings | `protein.fasta` | ESM2, ProtBERT and ProtT5 embeddings extracted from amino-acid sequences. |
+
+The web workflow does not request an external homolog table.
 
 ## Processed `.npz` format
 
-For full-model prediction, users may directly upload a processed `.npz` file:
+Advanced users may upload a processed `.npz` file directly:
 
-- `X`: numeric feature matrix, `n_genes x 6751`;
+- `X`: numeric feature matrix;
 - `gene_id`: gene identifiers;
 - optional `transcript_id` or `sequence_id`;
 - optional `feature_names`;
-- optional `n_bio = 95`.
+- optional `n_bio`.
 
-The first 95 columns must match `data/processed_features/common6751_feature_names.tsv`;
-the remaining 6,656 columns must be ordered as ESM2, ProtBERT and ProtT5.
+For the full 6751-dimensional model, the first 95 columns must match the
+released biological feature order, followed by the 6656 PLM dimensions.

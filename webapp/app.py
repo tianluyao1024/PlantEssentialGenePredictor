@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+from io import StringIO
 import json
 import re
 import shutil
@@ -82,9 +83,7 @@ TEMPLATE_FILES = {
     "Protein FASTA example": ROOT / "docs" / "input_templates" / "protein_example.fasta",
     "GO annotation template": ROOT / "docs" / "input_templates" / "go_annotation_template.tsv",
     "PPI edge-list template": ROOT / "docs" / "input_templates" / "ppi_edges_template.tsv",
-    "PPI degree template": ROOT / "docs" / "input_templates" / "ppi_degree_template.tsv",
     "Expression matrix template": ROOT / "docs" / "input_templates" / "expression_matrix_template.tsv",
-    "Expression summary template": ROOT / "docs" / "input_templates" / "expression_summary_template.tsv",
     "Domain annotation template": ROOT / "docs" / "input_templates" / "domain_annotation_template.tsv",
     "Minimal GFF3 template": ROOT / "docs" / "input_templates" / "gff3_minimal_template.gff3",
 }
@@ -99,7 +98,13 @@ PROFILE_LABELS = {
     "sequence_plm_go_expression": "Sequence + PLM + GO + expression",
     "sequence_plm_ppi_expression": "Sequence + PLM + PPI + expression",
     "sequence_plm_go_ppi_expression": "Sequence + PLM + GO + PPI + expression",
-    "full_uploadable_without_cross_species_homologs": "Advanced full uploaded-feature profile",
+    "full_uploadable_without_cross_species_homologs": "Processed 6751 full profile",
+}
+RAW_TABLE_SCHEMAS = {
+    "GO annotation": ["gene_id", "go_id"],
+    "PPI edge list": ["gene_a", "gene_b", "score"],
+    "Expression matrix": ["gene_id"],
+    "Domain annotation": ["gene_id", "domain_id", "source"],
 }
 
 
@@ -181,6 +186,27 @@ def parse_fasta_bytes(data: bytes, protein: bool) -> FastaStats:
         max_length=int(arr.max()),
         checksum=sha256_bytes(data),
     )
+
+
+def parse_tsv_preview(data: bytes, required_columns: list[str]) -> tuple[pd.DataFrame, dict[str, object]]:
+    text = data.decode("utf-8", errors="replace")
+    frame = pd.read_csv(StringIO(text), sep="\t")
+    missing = [column for column in required_columns if column not in frame.columns]
+    id_column = "gene_id" if "gene_id" in frame.columns else None
+    if id_column is None and {"gene_a", "gene_b"}.issubset(frame.columns):
+        ids = pd.concat([frame["gene_a"].astype(str), frame["gene_b"].astype(str)], ignore_index=True)
+        unique_ids = int(ids.nunique())
+    elif id_column is not None:
+        unique_ids = int(frame[id_column].astype(str).nunique())
+    else:
+        unique_ids = 0
+    report = {
+        "rows": int(len(frame)),
+        "columns": int(len(frame.columns)),
+        "required_columns_missing": ", ".join(missing) if missing else "none",
+        "unique_gene_ids": unique_ids,
+    }
+    return frame.head(8), report
 
 
 def metadata_for_public_cache(
@@ -284,7 +310,7 @@ with st.sidebar:
 tabs = st.tabs(
     [
         "Full-model prediction",
-        "Basic FASTA mode",
+        "Raw data upload demo",
         "Input formats",
         "Released predictions",
         "Known labels",
@@ -294,20 +320,33 @@ tabs = st.tabs(
 )
 
 with tabs[0]:
-    st.subheader("Full-model prediction from processed 6751-dimensional features")
+    st.subheader("Model selection and prediction")
     st.write(
-        "Use this mode when the input `.npz` already matches the released `common6751` schema. "
-        "This is the same feature space used by the manuscript models."
+        "Choose one of the three released model families. Arabidopsis and rice use their single-species "
+        "full models. The joint Arabidopsis-rice model can also be used with deployable feature-profile "
+        "models when users provide only part of the optional annotations."
     )
 
     col_left, col_right = st.columns([1, 1])
     with col_left:
         model = st.selectbox(
-            "Model",
+            "Primary model family",
             list(MODEL_LABELS),
             format_func=lambda x: MODEL_LABELS[x],
             key="full_model",
         )
+        if model == "joint":
+            joint_profile = st.selectbox(
+                "Joint-model feature profile",
+                list(PROFILE_LABELS),
+                format_func=lambda value: PROFILE_LABELS[value],
+                key="joint_profile",
+            )
+            st.caption(
+                "The processed `.npz` prediction button below runs the released 6751-dimensional joint model. "
+                "The profile selector documents which raw-data feature combination should be extracted for "
+                "the corresponding deployable joint profile."
+            )
         threshold = st.number_input(
             "Classification threshold",
             value=float(DEFAULT_THRESHOLDS[model]),
@@ -381,16 +420,51 @@ with tabs[0]:
                 st.error(f"Prediction failed: {exc}")
 
 with tabs[1]:
-    st.subheader("Basic FASTA mode for sequence and PLM prediction")
+    st.subheader("Raw data upload and feature-extraction demo")
     st.write(
-        "This mode validates FASTA uploads for the deployable sequence + PLM model. "
-        "Online PLM extraction can be enabled on the local server; large proteomes should be processed in batches."
+        "Users upload raw biological files; the server validates IDs and formats, then the backend extracts "
+        "model features. The core files are `protein.fasta`, `cds.fasta` and `annotation.gff3`. "
+        "GO, PPI, expression and domain files are optional enhancement inputs."
+    )
+    raw_model_family = st.selectbox(
+        "Model to use after feature extraction",
+        ["arabidopsis_single", "rice_single", "joint"],
+        format_func=lambda value: MODEL_LABELS[value],
+        key="raw_model_family",
+    )
+    if raw_model_family == "joint":
+        st.selectbox(
+            "Available joint-model feature combination",
+            list(PROFILE_LABELS),
+            format_func=lambda value: PROFILE_LABELS[value],
+            key="raw_joint_profile",
+        )
+    st.markdown(
+        """
+**Required / recommended core files**
+
+- `protein.fasta`: required for protein sequence features and PLM embeddings.
+- `cds.fasta`: strongly recommended for CDS length, GC, GC3 and nucleotide composition.
+- `annotation.gff3`: strongly recommended for gene span and transcript structure.
+
+**Optional annotation files**
+
+- `go_annotation.tsv`: `gene_id`, `go_id`.
+- `ppi_edges.tsv`: `gene_a`, `gene_b`, `score`; tab-separated edge list only.
+- `expression_matrix.tsv`: `gene_id` followed by sample columns; TPM/FPKM/normalized values recommended.
+- `domain_annotation.tsv`: `gene_id`, `domain_id`, `source`.
+"""
     )
     cds_file = st.file_uploader("CDS FASTA", type=["fa", "fasta", "fna", "txt"], key="cds_fasta")
     protein_file = st.file_uploader("Protein FASTA", type=["fa", "fasta", "faa", "txt"], key="protein_fasta")
+    gff3_file = st.file_uploader("GFF3 annotation", type=["gff", "gff3", "txt"], key="gff3_upload")
+    go_file = st.file_uploader("GO annotation TSV", type=["tsv", "txt"], key="go_upload")
+    ppi_file = st.file_uploader("PPI edge-list TSV", type=["tsv", "txt"], key="ppi_upload")
+    expr_file = st.file_uploader("Expression matrix TSV", type=["tsv", "txt"], key="expr_upload")
+    domain_file = st.file_uploader("Domain annotation TSV", type=["tsv", "txt"], key="domain_upload")
 
-    if cds_file is None and protein_file is None:
-        st.info("Upload CDS and/or protein FASTA to validate file structure.")
+    if all(file is None for file in [cds_file, protein_file, gff3_file, go_file, ppi_file, expr_file, domain_file]):
+        st.info("Upload one or more raw input files to validate file structure.")
     else:
         rows = []
         if cds_file is not None:
@@ -401,51 +475,118 @@ with tabs[1]:
             protein_data = protein_file.getvalue()
             protein_stats = parse_fasta_bytes(protein_data, protein=True)
             rows.append({"file": "Protein", **protein_stats.__dict__})
-        stats_df = pd.DataFrame(rows)
-        st.dataframe(stats_df, use_container_width=True)
+        if rows:
+            st.markdown("### FASTA validation")
+            stats_df = pd.DataFrame(rows)
+            st.dataframe(stats_df, use_container_width=True)
+        if gff3_file is not None:
+            gff3_text = gff3_file.getvalue().decode("utf-8", errors="replace")
+            gff3_rows = [line for line in gff3_text.splitlines() if line and not line.startswith("#")]
+            st.markdown("### GFF3 validation")
+            st.write(
+                {
+                    "non_comment_rows": len(gff3_rows),
+                    "has_nine_tab_separated_columns_in_preview": all(
+                        len(row.split("\t")) >= 9 for row in gff3_rows[:20]
+                    )
+                    if gff3_rows
+                    else False,
+                }
+            )
+            st.code("\n".join(gff3_rows[:3]), language="text")
+        table_uploads = [
+            ("GO annotation", go_file),
+            ("PPI edge list", ppi_file),
+            ("Expression matrix", expr_file),
+            ("Domain annotation", domain_file),
+        ]
+        for label, uploaded in table_uploads:
+            if uploaded is None:
+                continue
+            st.markdown(f"### {label} validation")
+            try:
+                preview, report = parse_tsv_preview(uploaded.getvalue(), RAW_TABLE_SCHEMAS[label])
+                st.write(report)
+                st.dataframe(preview, use_container_width=True)
+            except Exception as exc:
+                st.error(f"{label} could not be parsed as tab-separated text: {exc}")
         st.info(
-            "FASTA validation is complete. Probability prediction requires extracting ESM2, ProtBERT and ProtT5 "
-            "embeddings, then applying the released `sequence_plm` profile model."
+            "This page currently validates raw inputs and demonstrates how feature extraction starts. "
+            "The next backend step is to run the feature-extraction pipeline, concatenate features in the "
+            "released schema, and call the selected model."
         )
+
+    st.markdown("### Example extracted feature row")
+    demo_feature_row = pd.DataFrame(
+        [
+            {
+                "gene_id": "Gene001",
+                "cds_length": 1230,
+                "protein_length": 409,
+                "gc3_content": 0.58,
+                "go_embryo_development": 1,
+                "string_network_connections_700": 8,
+                "median_expression": 8.9,
+                "domain_number": 2,
+                "esm2_dims": 2560,
+                "protbert_dims": 2048,
+                "prott5_dims": 2048,
+            }
+        ]
+    )
+    st.dataframe(demo_feature_row, use_container_width=True)
 
 with tabs[2]:
     st.subheader("Input formats and feature preparation")
     st.write(
-        "All uploaded files must use the same `gene_id`. For FASTA files, the first token after `>` is treated as "
-        "the gene ID. For tables, the first column should be `gene_id` unless the template says otherwise."
+        "The web server is designed for raw-data upload. Users do not need to manually build the model feature "
+        "matrix. All files must use the same stable gene ID. For FASTA files, the first token after `>` is treated "
+        "as the sequence ID. For TSV files, columns and separators must match the templates below."
     )
 
     with st.expander("Feature processing methods", expanded=True):
         st.markdown(
             """
+**Core input files**
+
+- `protein.fasta`: required. Used for protein length, amino-acid composition, physicochemical features and PLM embeddings.
+- `cds.fasta`: strongly recommended. Used for CDS length, GC, GC skew, GC3 and nucleotide composition.
+- `annotation.gff3`: strongly recommended. Used for gene span and transcript structure.
+- If multiple transcripts are present, the backend selects one longest protein-coding transcript per gene.
+
 **Sequence and protein features**
 
 - `cds.fasta` and `protein.fasta` are matched by `gene_id`.
-- If multiple transcripts are present, use the longest protein-coding transcript per gene.
+- If FASTA headers contain transcript IDs, the GFF3 `ID`/`Parent` relationships are used to map transcripts to genes.
 - CDS length, protein length, GC, AT, GC skew, AT skew, GC3, nucleotide frequency, amino-acid frequency, amino-acid group frequency and protein physicochemical features are computed from sequence.
 
 **GO features**
 
-- Upload `go_annotation.tsv` with `gene_id` and `go_id`.
+- Upload a tab-separated `go_annotation.tsv` with columns `gene_id` and `go_id`.
 - GO terms are collapsed into the curated GO summary groups used by the manuscript model.
 - Missing GO means unknown annotation, not true absence.
 
 **PPI features**
 
-- Upload an edge list with `gene_a`, `gene_b`, `score`, or a degree table with `string_network_connections_400` and `string_network_connections_700`.
-- Edge lists are collapsed as undirected interactions; self-loops are ignored.
+- Upload only a tab-separated edge list with columns `gene_a`, `gene_b`, `score`.
+- The network is treated as undirected; self-loops and duplicate edges are removed.
+- `string_network_connections_400` is the number of partners with `score >= 400`.
+- `string_network_connections_700` is the number of partners with `score >= 700`.
+- If no confidence score is available, users may set all scores to `1000`.
 
 **Expression features**
 
-- Upload a sample matrix or a summary table.
-- The pipeline summarizes median expression, expression variation, expression breadth and optionally co-expression module size.
+- Upload only a tab-separated expression matrix: first column `gene_id`, remaining columns are samples.
+- TPM, FPKM or normalized counts are recommended; raw read counts are not recommended.
+- The backend computes median expression, coefficient-of-variation-style expression variation and expression breadth.
+- `expression_module_size` is not computed in the basic web workflow unless a future co-expression module workflow is enabled.
 
-**Gene structure, paralogs, homologs and domains**
+**Gene structure, within-species paralogs and domains**
 
 - GFF3 is used for gene span and genomic location.
-- Whole-proteome FASTA is required for paralog summaries.
+- Whole-proteome protein FASTA is required for within-species paralog and gene-family summaries.
 - Domain features require Pfam/InterProScan-style domain annotations.
-- Cross-species homolog features require reference proteomes and a documented homology search.
+- The web workflow does not request an external homolog table.
 
 **PLM embeddings**
 
@@ -455,10 +596,66 @@ with tabs[2]:
 """
         )
 
+    with st.expander("Exact raw-data templates", expanded=True):
+        st.markdown(
+            """
+All tabular files must be tab-separated (`.tsv`), not comma-separated.
+
+**GO annotation**
+
+```text
+gene_id    go_id
+Gene001    GO:0009790
+Gene001    GO:0006950
+Gene002    GO:0006412
+```
+
+**PPI edge list**
+
+```text
+gene_a    gene_b    score
+Gene001   Gene002   850
+Gene001   Gene003   420
+Gene002   Gene004   760
+```
+
+**Expression matrix**
+
+```text
+gene_id    sample_1    sample_2    sample_3
+Gene001    12.4        8.9         0.0
+Gene002    0.0         0.2         4.1
+```
+
+**Domain annotation**
+
+```text
+gene_id    domain_id    source
+Gene001    PF00069      Pfam
+Gene001    PF07714      Pfam
+Gene002    PF00001      Pfam
+```
+
+**Minimal GFF3**
+
+```text
+Chr1    source    gene    1000    3500    .    +    .    ID=Gene001
+Chr1    source    mRNA    1000    3500    .    +    .    ID=Gene001.1;Parent=Gene001
+Chr1    source    CDS     1100    1400    .    +    0    Parent=Gene001.1
+```
+"""
+        )
+
     with st.expander("Recommended model choice for partial annotations", expanded=True):
         st.markdown(
             """
-The safest deployment design is to train separate models for common input profiles:
+The website exposes three main model choices:
+
+- Arabidopsis single-species model;
+- rice single-species model;
+- joint Arabidopsis-rice model.
+
+For the joint model, users can choose among feature-profile models according to the raw files they provide:
 
 - sequence + PLM only;
 - sequence + PLM + GO;
