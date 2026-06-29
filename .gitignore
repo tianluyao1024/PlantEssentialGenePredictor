@@ -6,7 +6,7 @@ webapp/_uploaded_features.npz
 webapp_data/jobs/*
 webapp_data/public_predictions/*
 webapp_data/logs/
-webapp_data/streamlit_server.pid
+webapp_data/*.pid
 !webapp_data/.gitkeep
 !webapp_data/jobs/.gitkeep
 !webapp_data/public_predictions/.gitkeep

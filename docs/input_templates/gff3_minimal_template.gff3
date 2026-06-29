@@ -1,0 +1,5 @@
+##gff-version 3
+Chr1	example	gene	1000	3500	.	+	.	ID=Gene001
+Chr1	example	mRNA	1000	3500	.	+	.	ID=Gene001.1;Parent=Gene001
+Chr1	example	CDS	1100	1400	.	+	0	Parent=Gene001.1
+Chr1	example	CDS	1600	2100	.	+	2	Parent=Gene001.1

@@ -63,6 +63,31 @@ BUNDLED_PREDICTIONS = {
     "Rice all genes, single model": ROOT / "predictions" / "rice_unknown_all_single_model_predictions.tsv",
     "Rice all genes, joint model": ROOT / "predictions" / "rice_unknown_all_joint_model_predictions.tsv",
 }
+LABEL_TABLES = {
+    "Arabidopsis strict2601 fixed split labels": ROOT
+    / "data"
+    / "labels"
+    / "arabidopsis_strict2601_fixed_split_labels.tsv",
+    "Arabidopsis training labels": ROOT / "data" / "labels" / "arabidopsis_strict2601_training_labels.tsv",
+    "Arabidopsis validation labels": ROOT / "data" / "labels" / "arabidopsis_validation_labels.tsv",
+    "Arabidopsis test labels": ROOT / "data" / "labels" / "arabidopsis_test_labels.tsv",
+    "Rice strict399 + Tos17 N4 fixed split labels": ROOT
+    / "data"
+    / "labels"
+    / "rice_strict399_Tos17N4_fixed_split_labels.tsv",
+    "Rice raw strict399 + Tos17 N4 labels": ROOT / "data" / "labels" / "rice_raw_strict399_Tos17N4_labels.tsv",
+}
+TEMPLATE_FILES = {
+    "CDS FASTA example": ROOT / "docs" / "input_templates" / "cds_example.fasta",
+    "Protein FASTA example": ROOT / "docs" / "input_templates" / "protein_example.fasta",
+    "GO annotation template": ROOT / "docs" / "input_templates" / "go_annotation_template.tsv",
+    "PPI edge-list template": ROOT / "docs" / "input_templates" / "ppi_edges_template.tsv",
+    "PPI degree template": ROOT / "docs" / "input_templates" / "ppi_degree_template.tsv",
+    "Expression matrix template": ROOT / "docs" / "input_templates" / "expression_matrix_template.tsv",
+    "Expression summary template": ROOT / "docs" / "input_templates" / "expression_summary_template.tsv",
+    "Domain annotation template": ROOT / "docs" / "input_templates" / "domain_annotation_template.tsv",
+    "Minimal GFF3 template": ROOT / "docs" / "input_templates" / "gff3_minimal_template.gff3",
+}
 
 
 @dataclass
@@ -247,7 +272,9 @@ tabs = st.tabs(
     [
         "Full-model prediction",
         "Basic FASTA mode",
+        "Input formats",
         "Released predictions",
+        "Known labels",
         "Public species cache",
         "Server notes",
     ]
@@ -369,6 +396,95 @@ with tabs[1]:
         )
 
 with tabs[2]:
+    st.subheader("Input formats and feature preparation")
+    st.write(
+        "All uploaded files must use the same `gene_id`. For FASTA files, the first token after `>` is treated as "
+        "the gene ID. For tables, the first column should be `gene_id` unless the template says otherwise."
+    )
+
+    with st.expander("Feature processing methods", expanded=True):
+        st.markdown(
+            """
+**Sequence and protein features**
+
+- `cds.fasta` and `protein.fasta` are matched by `gene_id`.
+- If multiple transcripts are present, use the longest protein-coding transcript per gene.
+- CDS length, protein length, GC, AT, GC skew, AT skew, GC3, nucleotide frequency, amino-acid frequency, amino-acid group frequency and protein physicochemical features are computed from sequence.
+
+**GO features**
+
+- Upload `go_annotation.tsv` with `gene_id` and `go_id`.
+- GO terms are collapsed into the curated GO summary groups used by the manuscript model.
+- Missing GO means unknown annotation, not true absence.
+
+**PPI features**
+
+- Upload an edge list with `gene_a`, `gene_b`, `score`, or a degree table with `string_network_connections_400` and `string_network_connections_700`.
+- Edge lists are collapsed as undirected interactions; self-loops are ignored.
+
+**Expression features**
+
+- Upload a sample matrix or a summary table.
+- The pipeline summarizes median expression, expression variation, expression breadth and optionally co-expression module size.
+
+**Gene structure, paralogs, homologs and domains**
+
+- GFF3 is used for gene span and genomic location.
+- Whole-proteome FASTA is required for paralog summaries.
+- Domain features require Pfam/InterProScan-style domain annotations.
+- Cross-species homolog features require reference proteomes and a documented homology search.
+
+**PLM embeddings**
+
+- Protein sequences are embedded with ESM2, ProtBERT and ProtT5.
+- Special tokens and padding are excluded from pooling.
+- The released full model expects 2,560 ESM2 + 2,048 ProtBERT + 2,048 ProtT5 dimensions.
+"""
+        )
+
+    with st.expander("Recommended model choice for partial annotations", expanded=True):
+        st.markdown(
+            """
+The safest deployment design is to train separate models for common input profiles:
+
+- sequence + PLM only;
+- sequence + PLM + GO;
+- sequence + PLM + PPI;
+- sequence + PLM + expression;
+- sequence + PLM + GO + PPI;
+- sequence + PLM + GO + expression;
+- sequence + PLM + PPI + expression;
+- sequence + PLM + GO + PPI + expression;
+- full 6751-feature model.
+
+This avoids using zeros for missing GO/PPI/expression fields. The current release includes the full 6751-feature model;
+the partial-annotation models are being prepared as separate deployable models.
+"""
+        )
+
+    guide = ROOT / "docs" / "input_feature_preparation.md"
+    if guide.exists():
+        st.download_button(
+            "Download complete feature-preparation guide",
+            guide.read_bytes(),
+            file_name=guide.name,
+            mime="text/markdown",
+        )
+
+    st.markdown("### Download input templates")
+    template_cols = st.columns(3)
+    for idx, (label, path) in enumerate(TEMPLATE_FILES.items()):
+        if path.exists():
+            with template_cols[idx % 3]:
+                st.download_button(
+                    label,
+                    path.read_bytes(),
+                    file_name=path.name,
+                    mime="text/plain",
+                    key=f"template_{idx}",
+                )
+
+with tabs[3]:
     st.subheader("Released manuscript prediction tables")
     choice = st.selectbox("Prediction table", list(BUNDLED_PREDICTIONS), key="released_pred")
     path = BUNDLED_PREDICTIONS[choice]
@@ -385,7 +501,35 @@ with tabs[2]:
     else:
         st.error(f"Missing table: {path}")
 
-with tabs[3]:
+with tabs[4]:
+    st.subheader("Known experimental and modeling-label tables")
+    st.write(
+        "These tables contain the known Arabidopsis and rice labels used for fixed train/validation/test evaluation. "
+        "They are separate from the unknown-gene prediction tables."
+    )
+    label_choice = st.selectbox("Known label table", list(LABEL_TABLES), key="known_labels")
+    label_path = LABEL_TABLES[label_choice]
+    if label_path.exists():
+        label_df = pd.read_csv(label_path, sep="\t")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Rows", f"{len(label_df):,}")
+        if "label" in label_df.columns:
+            c2.metric("Essential", f"{int(pd.to_numeric(label_df['label'], errors='coerce').fillna(0).sum()):,}")
+            c3.metric(
+                "Non-essential",
+                f"{int((pd.to_numeric(label_df['label'], errors='coerce').fillna(-1) == 0).sum()):,}",
+            )
+        st.dataframe(label_df.head(300), use_container_width=True)
+        st.download_button(
+            "Download selected known-label table",
+            label_path.read_bytes(),
+            file_name=label_path.name,
+            mime="text/tab-separated-values",
+        )
+    else:
+        st.error(f"Missing label table: {label_path}")
+
+with tabs[5]:
     st.subheader("Public species-level cached predictions")
     summaries = list(iter_public_prediction_summaries())
     if not summaries:
@@ -408,7 +552,7 @@ with tabs[3]:
             mime="application/gzip",
         )
 
-with tabs[4]:
+with tabs[6]:
     st.subheader("Deployment notes")
     st.markdown(
         """
