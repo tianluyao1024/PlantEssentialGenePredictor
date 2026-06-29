@@ -1,5 +1,14 @@
 # Reproducibility Guide
 
+## Clone With Large Files
+
+```bash
+git lfs install
+git clone https://github.com/tianluyao1024/PlantEssentialGenePredictor.git
+cd PlantEssentialGenePredictor
+git lfs pull
+```
+
 ## Predict From Released Features
 
 ```bash
@@ -31,4 +40,3 @@ Primary scripts:
 - `train_ath_three_labelsets_common6751_fixed_split.py`
 - `train_rice_strict399_N4_OOF_threshold_bootstrap.py`
 - `train_joint_ath2601_rice_strict399_common6751.py`
-

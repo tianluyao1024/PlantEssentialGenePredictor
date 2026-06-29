@@ -25,6 +25,15 @@ Summary counts are in `predictions/prediction_summary.tsv`.
 
 ## Two Ways To Use This Release
 
+Before using the models or processed feature matrices, clone the repository with Git LFS enabled:
+
+```bash
+git lfs install
+git clone https://github.com/tianluyao1024/PlantEssentialGenePredictor.git
+cd PlantEssentialGenePredictor
+git lfs pull
+```
+
 ### Option 1: Use the processed features and train or predict yourself
 
 Processed feature matrices are stored in `data/processed_features/` as compressed NumPy `.npz` files:
@@ -55,6 +64,8 @@ Available models:
 - `arabidopsis_single`
 - `rice_single`
 - `joint`
+
+The released training scripts are provided for reproducibility and inspection. Some full retraining workflows require source database downloads or intermediate feature files that are not redistributed in this repository.
 
 ### Option 2: Use the trained models directly
 
@@ -92,15 +103,15 @@ Raw GO, PPI, expression, phenotype database dumps and PLM intermediate files are
 
 ## Large Files
 
-Processed feature matrices and model bundles are large. Track these file types with Git LFS or deposit them on Zenodo/Figshare/OSF:
+Processed feature matrices and model bundles are stored with Git LFS:
 
 ```bash
 git lfs install
-git lfs track "*.npz"
-git lfs track "*.joblib"
+git lfs pull
 ```
+
+If GitHub LFS quota becomes limiting, future releases should deposit large `.npz` and `.joblib` files on Zenodo, Figshare or OSF and keep GitHub as the code repository.
 
 ## Citation
 
 If you use this resource, cite the associated manuscript and the source databases and PLM models described in the paper.
-
