@@ -1,0 +1,13 @@
+{
+  "project": "PlantEssentialGenePredictor",
+  "feature_space": "6751 features: 95 shared biological features + 6656 PLM embeddings",
+  "primary_models": {
+    "arabidopsis_single": "models/arabidopsis_single_strict2601_common6751",
+    "rice_single": "models/rice_single_strict399_Tos17N4_common6751",
+    "joint": "models/joint_arabidopsis_rice_common6751"
+  },
+  "large_files": {
+    "recommendation": "Track .npz and .joblib files with Git LFS or deposit them on Zenodo/Figshare/OSF.",
+    "reason": "Processed feature matrices and some model bundles exceed standard GitHub file-size limits."
+  }
+}

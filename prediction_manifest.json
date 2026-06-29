@@ -1,0 +1,33 @@
+{
+  "release_root": "E:\\PlantEssentialGenePredictor",
+  "feature_space": "common6751 = 95 shared biological features + 6656 PLM embeddings",
+  "arabidopsis_unknown_note": "Arabidopsis unknown20460 matrices contain sequence-derived biological features plus PLM embeddings; annotation-derived biological features that were unavailable for unknown genes are left as missing values for the trained model imputers.",
+  "rice_total_genes_predicted": 34215,
+  "rice_known_label_genes": 1168,
+  "arabidopsis_unknown_genes_predicted": 20460,
+  "thresholds": {
+    "arabidopsis_single": 0.3,
+    "rice_single": 0.4015871584415436,
+    "joint": 0.45597791914222807
+  },
+  "model_paths_used": {
+    "arabidopsis_single": "D:\\拟南芥\\模型\\ath_three_labelsets_common6751_fixed_core1623_80_10_10\\strict2601_common6751\\selected_model_and_manifest.joblib",
+    "rice_single": "E:\\CodexMoved\\Desktop\\水稻\\cross_species_ath_rice_common_features_models\\joint_ath2601_rice_strict399_common6751\\rice_strict399_N4_common6751_baseline\\model.joblib",
+    "joint": "E:\\CodexMoved\\Desktop\\水稻\\cross_species_ath_rice_common_features_models\\joint_ath2601_rice_strict399_common6751\\joint_common6751_stacking\\model.joblib",
+    "joint_manifest": "E:\\CodexMoved\\Desktop\\水稻\\cross_species_ath_rice_common_features_models\\joint_ath2601_rice_strict399_common6751\\manifest.json"
+  },
+  "outputs": {
+    "prediction_summary": "E:\\PlantEssentialGenePredictor\\predictions\\prediction_summary.tsv",
+    "predictions": [
+      "rice_unknown_all_single_model_predictions.tsv",
+      "rice_unknown_all_joint_model_predictions.tsv",
+      "arabidopsis_unknown20460_single_model_predictions.tsv",
+      "arabidopsis_unknown20460_joint_model_predictions.tsv"
+    ],
+    "features": [
+      "data/processed_features/rice_common6751_all_genes.npz",
+      "data/processed_features/arabidopsis_unknown20460_common6751_sequence_plm_imputed_input.npz",
+      "data/processed_features/common6751_feature_names.tsv"
+    ]
+  }
+}
