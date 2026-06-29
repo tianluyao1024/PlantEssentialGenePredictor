@@ -10,4 +10,5 @@ webapp_data/*.pid
 !webapp_data/.gitkeep
 !webapp_data/jobs/.gitkeep
 !webapp_data/public_predictions/.gitkeep
+models/deployable_feature_profiles/*/model.joblib
 *.log

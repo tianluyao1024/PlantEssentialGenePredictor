@@ -88,6 +88,19 @@ TEMPLATE_FILES = {
     "Domain annotation template": ROOT / "docs" / "input_templates" / "domain_annotation_template.tsv",
     "Minimal GFF3 template": ROOT / "docs" / "input_templates" / "gff3_minimal_template.gff3",
 }
+PROFILE_MODEL_DIR = ROOT / "models" / "deployable_feature_profiles"
+PROFILE_COMPARISON = PROFILE_MODEL_DIR / "profile_model_comparison.tsv"
+PROFILE_LABELS = {
+    "sequence_plm": "Sequence + PLM",
+    "sequence_plm_go": "Sequence + PLM + GO",
+    "sequence_plm_ppi": "Sequence + PLM + PPI",
+    "sequence_plm_expression": "Sequence + PLM + expression",
+    "sequence_plm_go_ppi": "Sequence + PLM + GO + PPI",
+    "sequence_plm_go_expression": "Sequence + PLM + GO + expression",
+    "sequence_plm_ppi_expression": "Sequence + PLM + PPI + expression",
+    "sequence_plm_go_ppi_expression": "Sequence + PLM + GO + PPI + expression",
+    "full_uploadable_without_cross_species_homologs": "Advanced full uploaded-feature profile",
+}
 
 
 @dataclass
@@ -266,7 +279,7 @@ with st.sidebar:
     st.divider()
     st.header("Model status")
     st.success("Full 6751-feature model: available")
-    st.warning("Sequence-only model: interface drafted, model not released yet")
+    st.success("Deployable profile models: available")
 
 tabs = st.tabs(
     [
@@ -368,10 +381,10 @@ with tabs[0]:
                 st.error(f"Prediction failed: {exc}")
 
 with tabs[1]:
-    st.subheader("Basic FASTA mode for future sequence-only prediction")
+    st.subheader("Basic FASTA mode for sequence and PLM prediction")
     st.write(
-        "This mode validates FASTA uploads and prepares the server workflow for annotation-light prediction. "
-        "The actual sequence-only model should be trained and released before this mode returns probabilities."
+        "This mode validates FASTA uploads for the deployable sequence + PLM model. "
+        "Online PLM extraction can be enabled on the local server; large proteomes should be processed in batches."
     )
     cds_file = st.file_uploader("CDS FASTA", type=["fa", "fasta", "fna", "txt"], key="cds_fasta")
     protein_file = st.file_uploader("Protein FASTA", type=["fa", "fasta", "faa", "txt"], key="protein_fasta")
@@ -390,9 +403,9 @@ with tabs[1]:
             rows.append({"file": "Protein", **protein_stats.__dict__})
         stats_df = pd.DataFrame(rows)
         st.dataframe(stats_df, use_container_width=True)
-        st.warning(
-            "Sequence-only probability prediction is not enabled in this release. "
-            "Next step: train the annotation-light model using only FASTA-derived sequence features and PLM embeddings."
+        st.info(
+            "FASTA validation is complete. Probability prediction requires extracting ESM2, ProtBERT and ProtT5 "
+            "embeddings, then applying the released `sequence_plm` profile model."
         )
 
 with tabs[2]:
@@ -457,10 +470,74 @@ The safest deployment design is to train separate models for common input profil
 - sequence + PLM + GO + PPI + expression;
 - full 6751-feature model.
 
-This avoids using zeros for missing GO/PPI/expression fields. The current release includes the full 6751-feature model;
-the partial-annotation models are being prepared as separate deployable models.
+This avoids using zeros for missing GO/PPI/expression fields. The current release includes all profile models listed above.
 """
         )
+
+    if PROFILE_COMPARISON.exists():
+        st.markdown("### Released deployable profile models")
+        profile_df = pd.read_csv(PROFILE_COMPARISON, sep="\t")
+        profile_df["profile_label"] = profile_df["profile"].map(PROFILE_LABELS).fillna(profile_df["profile"])
+        test_df = profile_df.loc[profile_df["split"].eq("test")].copy()
+        display_cols = [
+            "profile_label",
+            "evaluation_species",
+            "selected_method",
+            "threshold",
+            "feature_count",
+            "bio_feature_count",
+            "auc",
+            "auprc",
+            "sensitivity",
+            "specificity",
+            "f1",
+        ]
+        st.dataframe(
+            test_df[display_cols].sort_values(["profile_label", "evaluation_species"]),
+            use_container_width=True,
+        )
+        st.download_button(
+            "Download profile-model comparison table",
+            PROFILE_COMPARISON.read_bytes(),
+            file_name=PROFILE_COMPARISON.name,
+            mime="text/tab-separated-values",
+        )
+
+        profile_names = [name for name in PROFILE_LABELS if (PROFILE_MODEL_DIR / name).exists()]
+        selected_profile = st.selectbox(
+            "Download a deployable profile model",
+            profile_names,
+            format_func=lambda value: PROFILE_LABELS.get(value, value),
+        )
+        profile_dir = PROFILE_MODEL_DIR / selected_profile
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            model_path = profile_dir / "model.joblib"
+            if model_path.exists():
+                st.download_button(
+                    "Model package",
+                    model_path.read_bytes(),
+                    file_name=f"{selected_profile}_model.joblib",
+                    mime="application/octet-stream",
+                )
+        with c2:
+            manifest_path = profile_dir / "manifest.json"
+            if manifest_path.exists():
+                st.download_button(
+                    "Manifest",
+                    manifest_path.read_bytes(),
+                    file_name=f"{selected_profile}_manifest.json",
+                    mime="application/json",
+                )
+        with c3:
+            feature_path = profile_dir / "feature_names.tsv"
+            if feature_path.exists():
+                st.download_button(
+                    "Feature names",
+                    feature_path.read_bytes(),
+                    file_name=f"{selected_profile}_feature_names.tsv",
+                    mime="text/tab-separated-values",
+                )
 
     guide = ROOT / "docs" / "input_feature_preparation.md"
     if guide.exists():
@@ -566,8 +643,9 @@ with tabs[6]:
 **Current release**
 
 - Full-model prediction from processed 6,751-dimensional features is enabled.
+- Deployable feature-profile models are available for sequence + PLM, GO, PPI and expression combinations.
 - Bundled Arabidopsis and rice prediction tables can be browsed and downloaded.
 - FASTA upload validation is enabled.
-- Online PLM extraction and annotation-light sequence prediction are not enabled until the deployable sequence-only model is trained.
+- Online PLM extraction and raw FASTA-to-probability jobs are designed for local-server batch execution.
 """
     )

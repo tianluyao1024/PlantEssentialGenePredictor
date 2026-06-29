@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import argparse
+import gc
 import json
 import sys
 from pathlib import Path
@@ -298,12 +300,27 @@ def train_profile(profile: str, force: bool = False) -> list[dict]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Train deployable partial-feature profile models.")
+    parser.add_argument(
+        "--profile",
+        action="append",
+        choices=sorted(PROFILES),
+        help="Profile to train. Can be passed multiple times. Default: train all profiles.",
+    )
+    parser.add_argument("--force", action="store_true", help="Retrain even if model files already exist.")
+    args = parser.parse_args()
+
     OUT.mkdir(parents=True, exist_ok=True)
     all_rows = []
-    for profile in PROFILES:
+    profile_names = args.profile or list(PROFILES)
+    existing = OUT / "profile_model_comparison.tsv"
+    if existing.exists() and not args.force:
+        all_rows.extend(pd.read_csv(existing, sep="\t").to_dict("records"))
+    for profile in profile_names:
         print(f"\n=== Training deployable profile: {profile} ===", flush=True)
-        all_rows.extend(train_profile(profile))
+        all_rows.extend(train_profile(profile, force=args.force))
         pd.DataFrame(all_rows).to_csv(OUT / "profile_model_comparison_partial.tsv", sep="\t", index=False)
+        gc.collect()
     pd.DataFrame(all_rows).to_csv(OUT / "profile_model_comparison.tsv", sep="\t", index=False)
 
 
