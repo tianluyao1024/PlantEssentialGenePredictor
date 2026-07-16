@@ -1,5 +1,7 @@
 ﻿# PlantEssentialGenePredictor
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21387076.svg)](https://doi.org/10.5281/zenodo.21387076)
+
 PlantEssentialGenePredictor is a reproducible plant essential-gene prioritization framework for *Arabidopsis thaliana* and rice (*Oryza sativa*). It uses a shared 6,751-dimensional feature space composed of 95 biological features and 6,656 protein language model embeddings from ESM2, ProtBERT and ProtT5.
 
 The repository provides:
@@ -36,12 +38,12 @@ cd PlantEssentialGenePredictor
 Large artifacts are archived on Zenodo:
 
 ```text
-DOI: 10.5281/zenodo.XXXXXXX
+DOI: 10.5281/zenodo.21387076
 ```
 
-Replace the placeholder DOI after the Zenodo deposition is published. Download
-the Zenodo artifact and extract it into the repository root so that `models/`,
-`data/processed_features/`, `data/labels/` and `predictions/` are present.
+Download the Zenodo artifact and extract it into the repository root so that
+`models/`, `data/processed_features/`, `data/labels/` and `predictions/` are
+present.
 
 ## Two Ways To Use This Release
 

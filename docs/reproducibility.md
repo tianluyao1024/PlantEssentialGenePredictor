@@ -12,7 +12,7 @@ cd PlantEssentialGenePredictor
 Download the archived model/data artifact from Zenodo:
 
 ```text
-DOI: 10.5281/zenodo.XXXXXXX
+DOI: 10.5281/zenodo.21387076
 ```
 
 Extract the artifact into the repository root. After extraction, these paths should exist:
@@ -56,3 +56,4 @@ Primary scripts:
 - `train_ath_three_labelsets_common6751_fixed_split.py`
 - `train_rice_strict399_N4_OOF_threshold_bootstrap.py`
 - `train_joint_ath2601_rice_strict399_common6751.py`
+

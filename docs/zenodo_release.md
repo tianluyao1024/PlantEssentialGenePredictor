@@ -1,4 +1,4 @@
-# Zenodo release plan
+﻿# Zenodo release plan
 
 The GitHub repository contains code, documentation, input templates and small
 label files. Large artifacts are deposited on Zenodo.
@@ -42,14 +42,14 @@ Do not upload:
 
 ## DOI handling
 
-Zenodo will mint a DOI after the deposition is published. Replace the placeholder
-in `README.md`:
+The published Zenodo DOI is:
 
 ```text
-10.5281/zenodo.XXXXXXX
+10.5281/zenodo.21387076
 ```
 
-with the final DOI, then commit and push the README update to GitHub.
+This DOI is referenced in `README.md` and in the manuscript data availability
+statement.
 
 ## Manuscript wording
 
@@ -59,5 +59,6 @@ Suggested Data availability wording:
 > GitHub: https://github.com/tianluyao1024/PlantEssentialGenePredictor.
 > Processed feature matrices, trained model objects, fixed label tables and
 > genome-scale prediction tables are archived on Zenodo under DOI:
-> 10.5281/zenodo.XXXXXXX.
+> 10.5281/zenodo.21387076.
+
 
