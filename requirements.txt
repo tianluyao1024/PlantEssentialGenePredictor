@@ -7,3 +7,7 @@ lightgbm
 xgboost
 streamlit
 torch
+transformers
+sentencepiece
+fair-esm
+protobuf

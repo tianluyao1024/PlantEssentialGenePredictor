@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import gzip
 import hashlib
@@ -6,6 +6,7 @@ from io import StringIO
 import json
 import re
 import shutil
+import subprocess
 import sys
 import time
 import uuid
@@ -283,6 +284,125 @@ def run_full_prediction(input_path: Path, model: str, threshold: float) -> pd.Da
     return out.sort_values(["essential_probability", "gene_id"], ascending=[False, True])
 
 
+def find_plm_weights_root() -> Path | None:
+    portable_root = ROOT.parent
+    candidates = [
+        portable_root / "plm_model_weights",
+        ROOT / "webapp_data" / "plm_model_weights",
+        Path(r"E:\PlantEssentialGenePredictor_Portable\plm_model_weights"),
+    ]
+    return next((path for path in candidates if path.exists()), None)
+
+
+def find_precomputed_plm_dir() -> Path | None:
+    portable_root = ROOT.parent
+    candidates = [
+        portable_root / "precomputed_plm_embeddings" / "ath_rice",
+        ROOT / "webapp_data" / "precomputed_plm_embeddings" / "ath_rice",
+        Path(r"E:\CodexMoved\Desktop\姘寸ɑ\cross_species_ath_rice_common_features_models\plm_embeddings"),
+    ]
+    return next((path for path in candidates if path.exists()), None)
+
+
+def build_online_plm(job_dir: Path, batch_size: int, device: str) -> Path:
+    weights_root = find_plm_weights_root()
+    if weights_root is None:
+        raise FileNotFoundError(
+            "No local PLM model weights were found. Expected ../plm_model_weights with ESM2, ProtBERT and ProtT5."
+        )
+    plm_dir = job_dir / "online_plm_embeddings"
+    cmd = [
+        sys.executable,
+        str(ROOT / "scripts" / "feature_extraction" / "extract_plm_embeddings_from_fasta.py"),
+        "--protein-fasta",
+        str(job_dir / "protein.fasta"),
+        "--out-dir",
+        str(plm_dir),
+        "--weights-root",
+        str(weights_root),
+        "--batch-size",
+        str(batch_size),
+        "--device",
+        device,
+    ]
+    subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True, text=True)
+    return plm_dir
+
+
+def run_raw_profile_prediction(
+    uploaded_files: dict[str, object],
+    profile: str,
+    plm_mode: str = "online",
+    plm_batch_size: int = 4,
+    plm_device: str = "auto",
+) -> tuple[pd.DataFrame, dict[str, object], Path]:
+    if profile not in PROFILE_LABELS:
+        raise ValueError(f"Unknown profile: {profile}")
+    job_dir = JOBS_DIR / f"raw_profile_{uuid.uuid4().hex[:10]}"
+    job_dir.mkdir(parents=True, exist_ok=True)
+    name_map = {
+        "cds": "cds.fasta",
+        "protein": "protein.fasta",
+        "gff3": "annotation.gff3",
+        "go": "go_annotation.tsv",
+        "ppi": "ppi_edges.tsv",
+        "expression": "expression_matrix.tsv",
+        "domain": "domain_annotation.tsv",
+    }
+    for key, uploaded in uploaded_files.items():
+        if uploaded is not None:
+            write_uploaded_file(uploaded, job_dir / name_map[key])
+
+    if plm_mode == "online":
+        plm_dir = build_online_plm(job_dir, plm_batch_size, plm_device)
+    else:
+        plm_dir = find_precomputed_plm_dir()
+    if plm_dir is None:
+        raise FileNotFoundError(
+            "No PLM embeddings were available. Use online PLM extraction or put precomputed embeddings under "
+            "../precomputed_plm_embeddings/ath_rice."
+        )
+    portable_root = ROOT.parent
+    candidate_obo = [
+        portable_root / "raw_data" / "arabidopsis" / "go-basic.obo",
+        Path(r"E:\CodexMoved\Desktop\姘寸ɑ\cross_species_ath_rice_common_features_models\external_raw_stable\go-basic.obo"),
+    ]
+    go_obo = next((path for path in candidate_obo if path.exists()), None)
+    profile_dir = PROFILE_MODEL_DIR / profile
+    out_prefix = job_dir / "raw_profile_features"
+    feature_cmd = [
+        sys.executable,
+        str(ROOT / "scripts" / "feature_extraction" / "raw_upload_to_profile_features.py"),
+        "--input-dir",
+        str(job_dir),
+        "--profile-dir",
+        str(profile_dir),
+        "--out-prefix",
+        str(out_prefix),
+        "--plm-dir",
+        str(plm_dir),
+    ]
+    if go_obo is not None:
+        feature_cmd += ["--go-obo", str(go_obo)]
+    subprocess.run(feature_cmd, cwd=ROOT, check=True, capture_output=True, text=True)
+
+    pred_path = job_dir / "raw_profile_predictions.tsv"
+    pred_cmd = [
+        sys.executable,
+        str(ROOT / "scripts" / "prediction" / "predict_from_profile_features.py"),
+        "--features",
+        str(out_prefix.with_suffix(".features.npz")),
+        "--model",
+        str(profile_dir / "model.joblib"),
+        "--out",
+        str(pred_path),
+    ]
+    subprocess.run(pred_cmd, cwd=ROOT, check=True, capture_output=True, text=True)
+    report = json.loads(out_prefix.with_suffix(".report.json").read_text(encoding="utf-8"))
+    out = pd.read_csv(pred_path, sep="\t")
+    return out, report, job_dir
+
+
 def show_prediction_metrics(out: pd.DataFrame) -> None:
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Genes", f"{len(out):,}")
@@ -403,7 +523,7 @@ with tabs[0]:
                 with st.spinner("Loading features, applying trained preprocessors and predicting..."):
                     out = run_full_prediction(input_path, model, float(threshold))
                 show_prediction_metrics(out)
-                st.dataframe(out.head(300), use_container_width=True)
+                st.dataframe(out.head(300), width="stretch")
                 tsv = out.to_csv(sep="\t", index=False).encode("utf-8")
                 st.download_button(
                     "Download predictions",
@@ -478,7 +598,7 @@ with tabs[1]:
         if rows:
             st.markdown("### FASTA validation")
             stats_df = pd.DataFrame(rows)
-            st.dataframe(stats_df, use_container_width=True)
+            st.dataframe(stats_df, width="stretch")
         if gff3_file is not None:
             gff3_text = gff3_file.getvalue().decode("utf-8", errors="replace")
             gff3_rows = [line for line in gff3_text.splitlines() if line and not line.startswith("#")]
@@ -507,14 +627,82 @@ with tabs[1]:
             try:
                 preview, report = parse_tsv_preview(uploaded.getvalue(), RAW_TABLE_SCHEMAS[label])
                 st.write(report)
-                st.dataframe(preview, use_container_width=True)
+                st.dataframe(preview, width="stretch")
             except Exception as exc:
                 st.error(f"{label} could not be parsed as tab-separated text: {exc}")
-        st.info(
-            "This page currently validates raw inputs and demonstrates how feature extraction starts. "
-            "The next backend step is to run the feature-extraction pipeline, concatenate features in the "
-            "released schema, and call the selected model."
-        )
+        if raw_model_family != "joint":
+            st.warning(
+                "Raw upload prediction is currently wired to the deployable joint-profile models. "
+                "Arabidopsis and rice single-species full models require a complete processed 6,751-feature matrix."
+            )
+        elif protein_file is None:
+            st.warning("Upload `protein.fasta` before running raw-data prediction.")
+        else:
+            selected_profile = st.session_state.get("raw_joint_profile", "sequence_plm")
+            st.markdown("### PLM embedding extraction")
+            plm_mode_label = st.radio(
+                "PLM source",
+                [
+                    "Online extraction from uploaded protein FASTA",
+                    "Use bundled precomputed Arabidopsis/rice embeddings",
+                ],
+                index=0,
+                help=(
+                    "Use online extraction for new species. The bundled precomputed option is only for "
+                    "Arabidopsis/rice validation jobs with matching gene IDs."
+                ),
+            )
+            plm_mode = "online" if plm_mode_label.startswith("Online") else "precomputed"
+            col_plm_a, col_plm_b = st.columns(2)
+            with col_plm_a:
+                plm_device = st.selectbox("PLM device", ["auto", "cuda", "cpu"], index=0)
+            with col_plm_b:
+                plm_batch_size = st.number_input(
+                    "PLM batch size",
+                    min_value=1,
+                    max_value=64,
+                    value=4,
+                    step=1,
+                    help="Lower this if GPU/CPU memory is insufficient. For large proteomes, 1-4 is safer.",
+                )
+            st.caption(
+                "Online extraction writes temporary ESM2, ProtBERT and ProtT5 embeddings inside the job folder, "
+                "then deletes nothing automatically so the run can be inspected. Server cleanup can remove old jobs later."
+            )
+            if st.button("Extract features and predict from raw uploads", type="primary"):
+                try:
+                    with st.spinner(
+                        "Saving uploads, extracting PLM embeddings if needed, building features and predicting..."
+                    ):
+                        raw_out, raw_report, raw_job_dir = run_raw_profile_prediction(
+                            {
+                                "cds": cds_file,
+                                "protein": protein_file,
+                                "gff3": gff3_file,
+                                "go": go_file,
+                                "ppi": ppi_file,
+                                "expression": expr_file,
+                                "domain": domain_file,
+                            },
+                            selected_profile,
+                            plm_mode=plm_mode,
+                            plm_batch_size=int(plm_batch_size),
+                            plm_device=plm_device,
+                        )
+                    st.success(f"Raw-data prediction completed. Job folder: `{raw_job_dir}`")
+                    st.write(raw_report)
+                    show_prediction_metrics(raw_out)
+                    st.dataframe(raw_out.head(200), width="stretch")
+                    st.download_button(
+                        "Download raw-upload predictions",
+                        raw_out.to_csv(sep="\t", index=False).encode("utf-8"),
+                        file_name=f"{selected_profile}_raw_upload_predictions.tsv",
+                    )
+                except subprocess.CalledProcessError as exc:
+                    st.error("Raw-data feature extraction or prediction failed.")
+                    st.code((exc.stderr or exc.stdout or str(exc))[-4000:], language="text")
+                except Exception as exc:
+                    st.error(f"Raw-data prediction failed: {exc}")
 
     st.markdown("### Example extracted feature row")
     demo_feature_row = pd.DataFrame(
@@ -534,7 +722,7 @@ with tabs[1]:
             }
         ]
     )
-    st.dataframe(demo_feature_row, use_container_width=True)
+    st.dataframe(demo_feature_row, width="stretch")
 
 with tabs[2]:
     st.subheader("Input formats and feature preparation")
@@ -691,7 +879,7 @@ This avoids using zeros for missing GO/PPI/expression fields. The current releas
         ]
         st.dataframe(
             test_df[display_cols].sort_values(["profile_label", "evaluation_species"]),
-            use_container_width=True,
+            width="stretch",
         )
         st.download_button(
             "Download profile-model comparison table",
@@ -765,7 +953,7 @@ with tabs[3]:
     if path.exists():
         df = pd.read_csv(path, sep="\t")
         show_prediction_metrics(df)
-        st.dataframe(df.head(300), use_container_width=True)
+        st.dataframe(df.head(300), width="stretch")
         st.download_button(
             "Download full table",
             path.read_bytes(),
@@ -793,7 +981,7 @@ with tabs[4]:
                 "Non-essential",
                 f"{int((pd.to_numeric(label_df['label'], errors='coerce').fillna(-1) == 0).sum()):,}",
             )
-        st.dataframe(label_df.head(300), use_container_width=True)
+        st.dataframe(label_df.head(300), width="stretch")
         st.download_button(
             "Download selected known-label table",
             label_path.read_bytes(),
@@ -810,7 +998,7 @@ with tabs[5]:
         st.info("No public species-level predictions have been cached yet.")
     else:
         summary_df = pd.DataFrame(summaries)
-        st.dataframe(summary_df, use_container_width=True)
+        st.dataframe(summary_df, width="stretch")
         selected_idx = st.number_input(
             "Row number to download",
             min_value=0,
@@ -846,3 +1034,4 @@ with tabs[6]:
 - Online PLM extraction and raw FASTA-to-probability jobs are designed for local-server batch execution.
 """
     )
+

@@ -1,4 +1,4 @@
-# PlantEssentialGenePredictor
+﻿# PlantEssentialGenePredictor
 
 PlantEssentialGenePredictor is a reproducible plant essential-gene prioritization framework for *Arabidopsis thaliana* and rice (*Oryza sativa*). It uses a shared 6,751-dimensional feature space composed of 95 biological features and 6,656 protein language model embeddings from ESM2, ProtBERT and ProtT5.
 
@@ -6,49 +6,56 @@ The repository provides:
 
 - processed feature matrices, not raw GO/PPI/expression/database downloads;
 - trained Arabidopsis, rice and joint Arabidopsis-rice models;
+- deployable feature-profile models for different uploaded annotation combinations;
 - fixed train/validation/test labels and model-evaluation outputs;
 - scripts for feature processing, model training, prediction and manuscript analyses;
-- a Streamlit web app for prediction from processed feature matrices.
+- a Streamlit web app for prediction from processed feature matrices or user-uploaded raw biological files.
 
 ## Main Released Predictions
 
-The four released prediction tables are in `predictions/`.
+The four released prediction tables are archived on Zenodo under `predictions/`.
 
 | File | Model | Genes predicted |
 |---|---|---:|
 | `arabidopsis_unknown20460_single_model_predictions.tsv` | Arabidopsis single-species strict2601 model | 20,460 Arabidopsis unknown genes |
 | `arabidopsis_unknown20460_joint_model_predictions.tsv` | Joint Arabidopsis-rice model | 20,460 Arabidopsis unknown genes |
-| `rice_unknown_all_single_model_predictions.tsv` | Rice strict399 + Tos17 N4 single-species model | 34,215 rice genes |
-| `rice_unknown_all_joint_model_predictions.tsv` | Joint Arabidopsis-rice model | 34,215 rice genes |
+| `rice_unknown_all_single_model_predictions.tsv` | Rice strict399 + Tos17 N4 single-species model | rice genome-scale prediction set |
+| `rice_unknown_all_joint_model_predictions.tsv` | Joint Arabidopsis-rice model | rice genome-scale prediction set |
 
 Summary counts are in `predictions/prediction_summary.tsv`.
 
-## Two Ways To Use This Release
+## Code and Data Availability
 
-Before using the models or processed feature matrices, clone the repository with Git LFS enabled:
+Code, documentation and the Streamlit web application are hosted on GitHub:
 
 ```bash
-git lfs install
 git clone https://github.com/tianluyao1024/PlantEssentialGenePredictor.git
 cd PlantEssentialGenePredictor
-git lfs pull
 ```
 
-### Option 1: Use the processed features and train or predict yourself
+Large artifacts are archived on Zenodo:
 
-Processed feature matrices are stored in `data/processed_features/` as compressed NumPy `.npz` files:
+```text
+DOI: 10.5281/zenodo.XXXXXXX
+```
 
-- `rice_common6751_all_genes.npz`
-- `arabidopsis_unknown20460_common6751_sequence_plm_imputed_input.npz`
-- `common6751_feature_names.tsv`
+Replace the placeholder DOI after the Zenodo deposition is published. Download
+the Zenodo artifact and extract it into the repository root so that `models/`,
+`data/processed_features/`, `data/labels/` and `predictions/` are present.
 
-Each `.npz` contains:
+## Two Ways To Use This Release
 
-- `X`: feature matrix with 6,751 columns;
+### Option 1: Use processed features and trained models
+
+After downloading the Zenodo artifact, processed feature matrices are available
+in `data/processed_features/` as compressed NumPy `.npz` files. Each `.npz`
+contains:
+
+- `X`: feature matrix;
 - `gene_id`: gene IDs;
-- `transcript_id` or `sequence_id` when available;
-- `feature_names`;
-- `n_bio = 95`.
+- optional `transcript_id` or `sequence_id`;
+- optional `feature_names`;
+- optional `n_bio`.
 
 Example prediction command:
 
@@ -59,23 +66,39 @@ python scripts/prediction/predict_from_processed_features.py \
   --out predictions/rice_single_rerun.tsv
 ```
 
-Available models:
+Available full models:
 
-- `arabidopsis_single`
-- `rice_single`
-- `joint`
+- `arabidopsis_single`;
+- `rice_single`;
+- `joint`.
 
-The released training scripts are provided for reproducibility and inspection. Some full retraining workflows require source database downloads or intermediate feature files that are not redistributed in this repository.
+### Option 2: Use raw-upload web prediction
 
-### Option 2: Use the trained models directly
+The Streamlit app can accept raw biological input files and construct the matching deployable feature profile. Users do not need to manually build a 6751-dimensional table.
 
-The trained model folders are:
+Required or optional uploads:
 
-- `models/arabidopsis_single_strict2601_common6751`
-- `models/rice_single_strict399_Tos17N4_common6751`
-- `models/joint_arabidopsis_rice_common6751`
+- `protein.fasta`, required for protein sequence features and PLM embeddings;
+- `cds.fasta`, strongly recommended for CDS composition features;
+- `annotation.gff3`, optional for gene structure and transcript mapping;
+- `go_annotation.tsv`, optional;
+- `ppi_edges.tsv`, optional;
+- `expression_matrix.tsv`, optional;
+- `domain_annotation.tsv`, optional.
 
-Use the same `predict_from_processed_features.py` script with a processed feature `.npz` file. The script applies the training-time preprocessing, base learners and stacking or model-selection rule.
+The joint deployable model provides feature-profile choices matching available annotations:
+
+- sequence + PLM;
+- sequence + PLM + GO;
+- sequence + PLM + PPI;
+- sequence + PLM + expression;
+- sequence + PLM + GO + PPI;
+- sequence + PLM + GO + expression;
+- sequence + PLM + PPI + expression;
+- sequence + PLM + GO + PPI + expression;
+- advanced full uploaded-feature profile.
+
+This design avoids treating missing GO, PPI or expression annotations as true biological zeros.
 
 ## Web App
 
@@ -86,38 +109,42 @@ pip install -r requirements.txt
 streamlit run webapp/app.py
 ```
 
-The app currently supports:
+On a server, run the app behind Nginx or another reverse proxy and point the domain DNS A record to the server IP. See `docs/webapp_deployment.md` and `docs/local_server_quickstart.md`.
 
-- full-model prediction from processed `.npz` feature matrices matching the released common6751 schema;
-- browsing and downloading the released Arabidopsis and rice prediction tables;
-- explicit public caching of final species-level prediction results;
-- FASTA upload validation for the future annotation-light model.
+The app supports:
 
-The current release does not download raw GO/PPI/expression data or run PLM embedding extraction online. Raw FASTA probability prediction should be enabled after training and releasing the annotation-light sequence model. See `docs/webapp_deployment.md` for the local-server design, temporary-file cleanup policy and public-cache workflow.
+- full-model prediction from processed `.npz` matrices;
+- raw-upload prediction from FASTA plus optional annotation files;
+- browsing and downloading released Arabidopsis and rice prediction tables;
+- downloading known-label tables and input templates;
+- public caching of final species-level prediction results;
+- temporary job directories for uploaded data, with cleanup scripts in `scripts/webapp/`.
+
+The server does not download GO, PPI, expression or domain annotations for users. These files must be uploaded by the user when those feature blocks are selected. Protein language model embeddings can be extracted locally when the bundled PLM weights are present under `../plm_model_weights`.
 
 ## Feature and Label Notes
 
-The common model feature space is:
+The full common model feature space is:
 
 - 95 shared biological features;
 - 2,560 ESM2 embedding features;
 - 2,048 ProtBERT embedding features;
 - 2,048 ProtT5 embedding features.
 
-For Arabidopsis unknown genes, annotation-derived biological features that were not available were left as missing values and handled by the trained model imputers. This mirrors the released unknown-gene prediction pipeline.
-
-Raw GO, PPI, expression, phenotype database dumps and PLM intermediate files are intentionally not included. Use the scripts in `scripts/feature_extraction/` to rebuild features from official sources.
+Raw GO, PPI, expression, phenotype database dumps and large PLM intermediate files are intentionally separated from the lightweight GitHub code release. The portable server package may contain bundled PLM model weights and reference assets for local deployment. Use the scripts in `scripts/feature_extraction/` to rebuild features from official sources.
 
 ## Large Files
 
-Processed feature matrices and model bundles are stored with Git LFS:
+GitHub is used for code and lightweight documentation. Zenodo is used for large
+research artifacts:
 
-```bash
-git lfs install
-git lfs pull
-```
+- trained `.joblib` model bundles;
+- processed `.npz` feature matrices;
+- fixed label tables;
+- genome-scale prediction tables;
+- file manifests and SHA256 checksums.
 
-If GitHub LFS quota becomes limiting, future releases should deposit large `.npz` and `.joblib` files on Zenodo, Figshare or OSF and keep GitHub as the code repository.
+See `docs/zenodo_release.md` for the release plan and upload checklist.
 
 ## Citation
 

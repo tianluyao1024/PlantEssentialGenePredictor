@@ -2,13 +2,23 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .streamlit/secrets.toml
+
+# Large research artifacts are deposited on Zenodo, not committed to GitHub.
+models/
+data/processed_features/
+data/processed_features/*.npz
+predictions/*.tsv
+precomputed_plm_embeddings/
+raw_data/
+plm_model_weights/
+
 webapp/_uploaded_features.npz
 webapp_data/jobs/*
 webapp_data/public_predictions/*
 webapp_data/logs/
+webapp_data/reference_proteomes/
 webapp_data/*.pid
 !webapp_data/.gitkeep
 !webapp_data/jobs/.gitkeep
 !webapp_data/public_predictions/.gitkeep
-models/deployable_feature_profiles/*/model.joblib
 *.log

@@ -1,0 +1,28 @@
+{
+  "title": "PlantEssentialGenePredictor: models, processed features and genome-scale predictions",
+  "upload_type": "dataset",
+  "description": "Processed feature matrices, trained models, fixed labels and genome-scale prediction tables associated with PlantEssentialGenePredictor, a plant essential-gene prioritization framework for Arabidopsis thaliana and rice.",
+  "creators": [
+    {
+      "name": "tianluyao1024"
+    }
+  ],
+  "keywords": [
+    "plant essential genes",
+    "Arabidopsis thaliana",
+    "Oryza sativa",
+    "machine learning",
+    "protein language model",
+    "functional genomics"
+  ],
+  "license": "mit",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "https://github.com/tianluyao1024/PlantEssentialGenePredictor",
+      "scheme": "url",
+      "resource_type": "software"
+    }
+  ]
+}
