@@ -1,0 +1,19 @@
+[Unit]
+Description=PlantEssentialGenePredictor Streamlit service
+After=network.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=__PROJECT_ROOT__
+Environment=PYTHONUNBUFFERED=1
+Environment=PLANT_EG_PLM_WEIGHTS=__APP_ROOT__/plm_model_weights
+Environment=PLANT_EG_GO_OBO=__APP_ROOT__/raw_data/go-basic.obo
+ExecStart=__PROJECT_ROOT__/.venv/bin/streamlit run webapp/app.py --server.address 127.0.0.1 --server.port __APP_PORT__ --server.headless true
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

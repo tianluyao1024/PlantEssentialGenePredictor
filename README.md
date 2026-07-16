@@ -113,6 +113,9 @@ streamlit run webapp/app.py
 
 On a server, run the app behind Nginx or another reverse proxy and point the domain DNS A record to the server IP. See `docs/webapp_deployment.md` and `docs/local_server_quickstart.md`.
 
+For an Ubuntu production server with systemd, Nginx and HTTPS, use
+`docs/linux_server_deployment.md` and the files under `deploy/linux/`.
+
 The app supports:
 
 - full-model prediction from processed `.npz` matrices;
