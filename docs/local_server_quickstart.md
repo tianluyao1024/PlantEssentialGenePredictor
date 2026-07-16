@@ -45,9 +45,16 @@ D:\Python\Python311\python.exe E:\PlantEssentialGenePredictor\scripts\webapp\cle
 
 ## Notes
 
-- The current website predicts from processed 6,751-dimensional `.npz` feature
-  matrices.
-- FASTA upload validation is available, but raw sequence probability prediction
-  requires the future annotation-light model.
+- The website predicts from processed 6,751-dimensional `.npz` feature matrices
+  and from raw uploads through the released joint feature-profile models.
+- For raw FASTA probability prediction, the server administrator must download
+  ESM2, ProtBERT and ProtT5 once. Run:
+
+```powershell
+python scripts\feature_extraction\download_plm_weights.py --weights-root ..\plm_model_weights
+```
+
+- The application detects `../plm_model_weights` automatically. Otherwise set
+  `PLANT_EG_PLM_WEIGHTS` to the directory that contains the checkpoint files.
 - Public species-level cache files are saved only when the user explicitly
   agrees to share final prediction results.

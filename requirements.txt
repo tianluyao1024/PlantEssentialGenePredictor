@@ -8,6 +8,7 @@ xgboost
 streamlit
 torch
 transformers
+huggingface-hub
 sentencepiece
 fair-esm
 protobuf

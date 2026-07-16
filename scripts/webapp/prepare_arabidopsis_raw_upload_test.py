@@ -11,19 +11,6 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULTS = {
-    "cds": Path(r"C:\Users\tly\Desktop\植物\拟南芥\Araport11_cds.fasta"),
-    "protein": Path(r"C:\Users\tly\Desktop\植物\拟南芥\Araport11_pep.fasta"),
-    "gff": Path(
-        r"E:\CodexMoved\Desktop\水稻\cross_species_ath_rice_common_features_models\external_raw_stable\Arabidopsis_thaliana.TAIR10.63.gff3.gz"
-    ),
-    "go": Path(r"C:\Users\tly\Desktop\植物\拟南芥\split_nonessential\ATH_GO_GOSLIM.txt\ATH_GO_GOSLIM.txt"),
-    "string_links": Path(
-        r"C:\Users\tly\Desktop\植物\拟南芥\split_nonessential\3702.protein.links.v12.0.txt\3702.protein.links.v12.0.txt"
-    ),
-    "tair_uniprot": Path(r"C:\Users\tly\Desktop\植物\拟南芥\split_nonessential\TAIR2UniprotMapping.txt"),
-    "labels": ROOT / "data" / "labels" / "arabidopsis_validation_labels.tsv",
-}
 
 
 def open_text(path: Path):
@@ -109,8 +96,7 @@ def prepare_gff(src: Path, genes: set[str], out: Path) -> int:
         for line in inp:
             if not line.strip() or line.startswith("#"):
                 continue
-            gid = gene_id(line)
-            if gid in genes:
+            if gene_id(line) in genes:
                 handle.write(line)
                 n += 1
     return n
@@ -130,14 +116,9 @@ def load_uniprot_mapping(path: Path) -> dict[str, str]:
     return mapping
 
 
-def string_to_gene(string_id: str, mapping: dict[str, str]) -> str | None:
-    accession = string_id.split(".", 1)[-1].split("-", 1)[0]
-    return mapping.get(accession)
-
-
 def prepare_ppi(links: Path, mapping_path: Path, genes: set[str], out: Path) -> int:
     mapping = load_uniprot_mapping(mapping_path)
-    rows = {}
+    rows: dict[tuple[str, str], int] = {}
     with open_text(links) as handle:
         header = handle.readline().split()
         i1, i2, iscore = header.index("protein1"), header.index("protein2"), header.index("combined_score")
@@ -145,57 +126,72 @@ def prepare_ppi(links: Path, mapping_path: Path, genes: set[str], out: Path) -> 
             parts = line.split()
             if len(parts) <= iscore:
                 continue
-            g1 = string_to_gene(parts[i1], mapping)
-            g2 = string_to_gene(parts[i2], mapping)
-            if not g1 or not g2 or g1 == g2:
+            a = mapping.get(parts[i1].split(".", 1)[-1].split("-", 1)[0])
+            b = mapping.get(parts[i2].split(".", 1)[-1].split("-", 1)[0])
+            if not a or not b or a == b or (a not in genes and b not in genes):
                 continue
-            if g1 not in genes and g2 not in genes:
-                continue
-            score = int(parts[iscore])
-            key = tuple(sorted([g1, g2]))
-            if score > rows.get(key, 0):
-                rows[key] = score
+            key = tuple(sorted((a, b)))
+            rows[key] = max(rows.get(key, 0), int(parts[iscore]))
     with out.open("w", encoding="utf-8") as handle:
         handle.write("gene_a\tgene_b\tscore\n")
-        for (g1, g2), score in sorted(rows.items()):
-            handle.write(f"{g1}\t{g2}\t{score}\n")
+        for (a, b), score in sorted(rows.items()):
+            handle.write(f"{a}\t{b}\t{score}\n")
     return len(rows)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Create a realistic Arabidopsis raw-upload test package.")
+    parser = argparse.ArgumentParser(description="Create website-style Arabidopsis raw-upload files from user-supplied source paths.")
     parser.add_argument("--out-dir", type=Path, default=ROOT / "webapp_data" / "jobs" / "arabidopsis_raw_upload_test")
     parser.add_argument("--n-genes", type=int, default=120)
+    parser.add_argument("--cds", required=True, type=Path, help="Araport11 CDS FASTA.")
+    parser.add_argument("--protein", required=True, type=Path, help="Araport11 protein FASTA.")
+    parser.add_argument("--gff", required=True, type=Path, help="Arabidopsis GFF3 or GFF3.GZ.")
+    parser.add_argument("--go", required=True, type=Path, help="TAIR GO annotation file.")
+    parser.add_argument("--string-links", required=True, type=Path, help="STRING protein links file.")
+    parser.add_argument("--tair-uniprot", required=True, type=Path, help="TAIR-to-UniProt mapping file.")
+    parser.add_argument("--labels", type=Path, default=ROOT / "data" / "labels" / "arabidopsis_validation_labels.tsv")
+    parser.add_argument("--plm-ids", type=Path, default=None, help="Optional all_ids.npy used to select genes represented in a cached PLM matrix.")
     args = parser.parse_args()
 
-    args.out_dir.mkdir(parents=True, exist_ok=True)
-    labels = pd.read_csv(DEFAULTS["labels"], sep="\t")
+    sources = {
+        "cds": args.cds,
+        "protein": args.protein,
+        "gff": args.gff,
+        "go": args.go,
+        "string_links": args.string_links,
+        "tair_uniprot": args.tair_uniprot,
+        "labels": args.labels,
+    }
+    missing = [name for name, path in sources.items() if not path.exists()]
+    if missing:
+        raise FileNotFoundError(f"Missing required source files: {', '.join(missing)}")
+    if args.plm_ids is not None and not args.plm_ids.exists():
+        raise FileNotFoundError(f"PLM ID file does not exist: {args.plm_ids}")
+
+    labels = pd.read_csv(args.labels, sep="\t")
     if "gene_id" not in labels.columns:
         raise RuntimeError("Label table must contain gene_id")
-    candidates = [gid for gid in labels["gene_id"].astype(str).map(str.upper).drop_duplicates() if gene_id(gid)]
-    cds = read_fasta_longest(DEFAULTS["cds"])
-    prot = read_fasta_longest(DEFAULTS["protein"])
-    plm_ids = np.load(
-        Path(r"E:\CodexMoved\Desktop\水稻\cross_species_ath_rice_common_features_models\plm_embeddings\esm2\ath\all_ids.npy"),
-        allow_pickle=True,
-    ).astype(str)
-    plm_genes = {gene_id(item) for item in plm_ids if gene_id(item)}
-    genes = [gid for gid in candidates if gid in cds and gid in prot and gid in plm_genes][: args.n_genes]
+    candidates = [gid for gid in labels["gene_id"].astype(str).str.upper().drop_duplicates() if gene_id(gid)]
+    cds = read_fasta_longest(args.cds)
+    prot = read_fasta_longest(args.protein)
+    plm_genes: set[str | None] | None = None
+    if args.plm_ids is not None:
+        plm_genes = {gene_id(item) for item in np.load(args.plm_ids, allow_pickle=True).astype(str)}
+    genes = [gid for gid in candidates if gid in cds and gid in prot and (plm_genes is None or gid in plm_genes)][: args.n_genes]
     if not genes:
-        raise RuntimeError("No genes matched CDS, protein and PLM IDs")
+        raise RuntimeError("No genes matched the supplied labels, CDS and protein FASTA files")
 
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     counts = {
         "selected_genes": len(genes),
         "protein_records": write_fasta(prot, genes, args.out_dir / "protein.fasta"),
         "cds_records": write_fasta(cds, genes, args.out_dir / "cds.fasta"),
-        "gff_rows": prepare_gff(DEFAULTS["gff"], set(genes), args.out_dir / "annotation.gff3"),
-        "go_rows": prepare_go(DEFAULTS["go"], set(genes), args.out_dir / "go_annotation.tsv"),
-        "ppi_edges": prepare_ppi(DEFAULTS["string_links"], DEFAULTS["tair_uniprot"], set(genes), args.out_dir / "ppi_edges.tsv"),
-        "expression_matrix": "not_available_in_local_raw_sources",
-        "domain_annotation": "not_available_in_local_raw_sources",
+        "gff_rows": prepare_gff(args.gff, set(genes), args.out_dir / "annotation.gff3"),
+        "go_rows": prepare_go(args.go, set(genes), args.out_dir / "go_annotation.tsv"),
+        "ppi_edges": prepare_ppi(args.string_links, args.tair_uniprot, set(genes), args.out_dir / "ppi_edges.tsv"),
     }
     (args.out_dir / "upload_manifest.json").write_text(
-        json.dumps({"genes": genes, "counts": counts, "source_files": {k: str(v) for k, v in DEFAULTS.items()}}, indent=2),
+        json.dumps({"genes": genes, "counts": counts, "source_files": {k: str(v) for k, v in sources.items()}}, indent=2),
         encoding="utf-8",
     )
     print(json.dumps({"out_dir": str(args.out_dir), **counts}, indent=2))

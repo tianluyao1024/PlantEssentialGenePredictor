@@ -124,6 +124,20 @@ The app supports:
 
 The server does not download GO, PPI, expression or domain annotations for users. These files must be uploaded by the user when those feature blocks are selected. Protein language model embeddings can be extracted locally when the bundled PLM weights are present under `../plm_model_weights`.
 
+For a server that accepts raw FASTA from new species, first download the PLM
+weights once as the server administrator. The download is intentionally manual
+because ESM2, ProtBERT and ProtT5 require substantial disk space:
+
+```bash
+python scripts/feature_extraction/download_plm_weights.py \
+  --weights-root ../plm_model_weights
+```
+
+The application automatically detects `../plm_model_weights`. To use a
+different location, set `PLANT_EG_PLM_WEIGHTS` before starting Streamlit.
+`PLANT_EG_PRECOMPUTED_PLM` and `PLANT_EG_GO_OBO` optionally configure cached
+Arabidopsis/rice embeddings and a GO ontology file, respectively.
+
 ## Feature and Label Notes
 
 The full common model feature space is:

@@ -4,6 +4,7 @@ import gzip
 import hashlib
 from io import StringIO
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -287,28 +288,39 @@ def run_full_prediction(input_path: Path, model: str, threshold: float) -> pd.Da
 def find_plm_weights_root() -> Path | None:
     portable_root = ROOT.parent
     candidates = [
+        Path(os.environ["PLANT_EG_PLM_WEIGHTS"]) if os.getenv("PLANT_EG_PLM_WEIGHTS") else None,
         portable_root / "plm_model_weights",
         ROOT / "webapp_data" / "plm_model_weights",
-        Path(r"E:\PlantEssentialGenePredictor_Portable\plm_model_weights"),
     ]
-    return next((path for path in candidates if path.exists()), None)
+    return next((path for path in candidates if path is not None and path.exists()), None)
 
 
 def find_precomputed_plm_dir() -> Path | None:
     portable_root = ROOT.parent
     candidates = [
+        Path(os.environ["PLANT_EG_PRECOMPUTED_PLM"]) if os.getenv("PLANT_EG_PRECOMPUTED_PLM") else None,
         portable_root / "precomputed_plm_embeddings" / "ath_rice",
         ROOT / "webapp_data" / "precomputed_plm_embeddings" / "ath_rice",
-        Path(r"E:\CodexMoved\Desktop\姘寸ɑ\cross_species_ath_rice_common_features_models\plm_embeddings"),
     ]
-    return next((path for path in candidates if path.exists()), None)
+    return next((path for path in candidates if path is not None and path.exists()), None)
+
+
+def find_go_obo() -> Path | None:
+    portable_root = ROOT.parent
+    candidates = [
+        Path(os.environ["PLANT_EG_GO_OBO"]) if os.getenv("PLANT_EG_GO_OBO") else None,
+        portable_root / "raw_data" / "go-basic.obo",
+        ROOT / "webapp_data" / "go-basic.obo",
+    ]
+    return next((path for path in candidates if path is not None and path.exists()), None)
 
 
 def build_online_plm(job_dir: Path, batch_size: int, device: str) -> Path:
     weights_root = find_plm_weights_root()
     if weights_root is None:
         raise FileNotFoundError(
-            "No local PLM model weights were found. Expected ../plm_model_weights with ESM2, ProtBERT and ProtT5."
+            "No PLM weights found. Run scripts/feature_extraction/download_plm_weights.py on the server, "
+            "place them in ../plm_model_weights, or set PLANT_EG_PLM_WEIGHTS."
         )
     plm_dir = job_dir / "online_plm_embeddings"
     cmd = [
@@ -362,12 +374,7 @@ def run_raw_profile_prediction(
             "No PLM embeddings were available. Use online PLM extraction or put precomputed embeddings under "
             "../precomputed_plm_embeddings/ath_rice."
         )
-    portable_root = ROOT.parent
-    candidate_obo = [
-        portable_root / "raw_data" / "arabidopsis" / "go-basic.obo",
-        Path(r"E:\CodexMoved\Desktop\姘寸ɑ\cross_species_ath_rice_common_features_models\external_raw_stable\go-basic.obo"),
-    ]
-    go_obo = next((path for path in candidate_obo if path.exists()), None)
+    go_obo = find_go_obo()
     profile_dir = PROFILE_MODEL_DIR / profile
     out_prefix = job_dir / "raw_profile_features"
     feature_cmd = [
