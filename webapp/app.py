@@ -436,8 +436,8 @@ with st.sidebar:
 
 tabs = st.tabs(
     [
-        "Full-model prediction",
-        "Raw data upload demo",
+        "Start raw-data prediction",
+        "Advanced: processed 6751-feature matrix",
         "Input formats",
         "Released predictions",
         "Known labels",
@@ -446,7 +446,7 @@ tabs = st.tabs(
     ]
 )
 
-with tabs[0]:
+with tabs[1]:
     st.subheader("Model selection and prediction")
     st.write(
         "Choose one of the three released model families. Arabidopsis and rice use their single-species "
@@ -546,26 +546,16 @@ with tabs[0]:
             except Exception as exc:
                 st.error(f"Prediction failed: {exc}")
 
-with tabs[1]:
-    st.subheader("Raw data upload and feature-extraction demo")
+with tabs[0]:
+    st.subheader("Start a prediction from raw biological files")
     st.write(
-        "Users upload raw biological files; the server validates IDs and formats, then the backend extracts "
-        "model features. The core files are `protein.fasta`, `cds.fasta` and `annotation.gff3`. "
-        "GO, PPI, expression and domain files are optional enhancement inputs."
+        "Upload the original biological files below. The server validates matching gene IDs, extracts compatible "
+        "features and runs a released deployable model. You do not need to prepare a 6,751-column matrix."
     )
-    raw_model_family = st.selectbox(
-        "Model to use after feature extraction",
-        ["arabidopsis_single", "rice_single", "joint"],
-        format_func=lambda value: MODEL_LABELS[value],
-        key="raw_model_family",
+    st.info(
+        "Raw-file prediction uses the released joint Arabidopsis-rice feature-profile models. "
+        "The Arabidopsis-only and rice-only full models remain available in the Advanced tab when a complete processed feature matrix is available."
     )
-    if raw_model_family == "joint":
-        st.selectbox(
-            "Available joint-model feature combination",
-            list(PROFILE_LABELS),
-            format_func=lambda value: PROFILE_LABELS[value],
-            key="raw_joint_profile",
-        )
     st.markdown(
         """
 **Required / recommended core files**
@@ -582,13 +572,42 @@ with tabs[1]:
 - `domain_annotation.tsv`: `gene_id`, `domain_id`, `source`.
 """
     )
-    cds_file = st.file_uploader("CDS FASTA", type=["fa", "fasta", "fna", "txt"], key="cds_fasta")
-    protein_file = st.file_uploader("Protein FASTA", type=["fa", "fasta", "faa", "txt"], key="protein_fasta")
-    gff3_file = st.file_uploader("GFF3 annotation", type=["gff", "gff3", "txt"], key="gff3_upload")
-    go_file = st.file_uploader("GO annotation TSV", type=["tsv", "txt"], key="go_upload")
-    ppi_file = st.file_uploader("PPI edge-list TSV", type=["tsv", "txt"], key="ppi_upload")
-    expr_file = st.file_uploader("Expression matrix TSV", type=["tsv", "txt"], key="expr_upload")
-    domain_file = st.file_uploader("Domain annotation TSV", type=["tsv", "txt"], key="domain_upload")
+    st.markdown("### 1. Core sequence and annotation files")
+    core_a, core_b, core_c = st.columns(3)
+    with core_a:
+        protein_file = st.file_uploader(
+            "Protein FASTA (required)", type=["fa", "fasta", "faa", "txt"], key="protein_fasta",
+            help="One protein sequence per gene, or a proteome with transcript IDs resolvable through GFF3."
+        )
+    with core_b:
+        cds_file = st.file_uploader(
+            "CDS FASTA (recommended)", type=["fa", "fasta", "fna", "txt"], key="cds_fasta",
+            help="Provides CDS length, GC, GC3 and nucleotide-composition features."
+        )
+    with core_c:
+        gff3_file = st.file_uploader(
+            "GFF3 genome annotation (recommended)", type=["gff", "gff3", "txt"], key="gff3_upload",
+            help="Used to harmonize transcript-to-gene IDs and to derive gene-structure information."
+        )
+
+    st.markdown("### 2. Optional functional annotation files")
+    opt_a, opt_b, opt_c, opt_d = st.columns(4)
+    with opt_a:
+        go_file = st.file_uploader("GO annotation TSV", type=["tsv", "txt"], key="go_upload", help="Columns: gene_id, go_id")
+    with opt_b:
+        ppi_file = st.file_uploader("PPI edge-list TSV", type=["tsv", "txt"], key="ppi_upload", help="Columns: gene_a, gene_b, score")
+    with opt_c:
+        expr_file = st.file_uploader("Expression matrix TSV", type=["tsv", "txt"], key="expr_upload", help="First column gene_id; remaining columns are samples.")
+    with opt_d:
+        domain_file = st.file_uploader("Domain annotation TSV", type=["tsv", "txt"], key="domain_upload", help="Columns: gene_id, domain_id, source")
+
+    st.markdown("### 3. Select the feature profile")
+    selected_profile = st.selectbox(
+        "Use the profile that exactly matches the optional files you uploaded",
+        list(PROFILE_LABELS),
+        format_func=lambda value: PROFILE_LABELS[value],
+        key="raw_joint_profile",
+    )
 
     if all(file is None for file in [cds_file, protein_file, gff3_file, go_file, ppi_file, expr_file, domain_file]):
         st.info("Upload one or more raw input files to validate file structure.")
@@ -637,15 +656,23 @@ with tabs[1]:
                 st.dataframe(preview, width="stretch")
             except Exception as exc:
                 st.error(f"{label} could not be parsed as tab-separated text: {exc}")
-        if raw_model_family != "joint":
-            st.warning(
-                "Raw upload prediction is currently wired to the deployable joint-profile models. "
-                "Arabidopsis and rice single-species full models require a complete processed 6,751-feature matrix."
-            )
-        elif protein_file is None:
+        expected = {
+            "go": "go" in selected_profile,
+            "ppi": "ppi" in selected_profile,
+            "expression": "expression" in selected_profile,
+        }
+        supplied = {"go": go_file is not None, "ppi": ppi_file is not None, "expression": expr_file is not None}
+        missing_for_profile = [name.upper() for name, required in expected.items() if required and not supplied[name]]
+        extra_for_profile = [name.upper() for name, uploaded in supplied.items() if uploaded and not expected[name]]
+        if missing_for_profile:
+            st.warning(f"Selected profile requires: {', '.join(missing_for_profile)}. Upload the file(s) or choose a compatible profile.")
+        if extra_for_profile:
+            st.info(f"Uploaded but not used by the selected profile: {', '.join(extra_for_profile)}. Choose a richer profile to include them.")
+        if protein_file is None:
             st.warning("Upload `protein.fasta` before running raw-data prediction.")
+        elif missing_for_profile:
+            st.info("Complete the selected profile inputs before starting feature extraction.")
         else:
-            selected_profile = st.session_state.get("raw_joint_profile", "sequence_plm")
             st.markdown("### PLM embedding extraction")
             plm_mode_label = st.radio(
                 "PLM source",
