@@ -93,7 +93,7 @@ def update_text(doc: Document) -> None:
     p = insert_after(after_caption, "A web-accessible predictor supports reusable candidate ranking", "Heading 2")
     insert_after(
         p,
-        "To make the released models accessible beyond the two benchmark species, we implemented PlantEssentialGenePredictor as a public Streamlit application (https://plantessentialgene.com). The application exposes the Arabidopsis single-species model, the rice single-species model and the joint Arabidopsis-rice model. It also provides nine deployable feature profiles, spanning sequence plus PLM features alone and the available combinations of GO, PPI and expression summaries. This design separates missing annotation from biological absence rather than treating unobserved GO, PPI or expression values as zero.",
+        "To make the released models accessible beyond the two benchmark species, we implemented PlantEssentialGenePredictor as a public Streamlit application (https://plantessentialgene.com). The default workflow is raw biological-file upload, whereas the Arabidopsis single-species, rice single-species and joint full models are available through an advanced processed-feature route. The raw-upload workflow provides nine deployable joint-model feature profiles, spanning sequence plus PLM features alone and the available combinations of GO, PPI and expression summaries. This design separates missing annotation from biological absence rather than treating unobserved GO, PPI or expression values as zero.",
         "Normal",
     )
     p = insert_after(
