@@ -1,5 +1,8 @@
 # Independent Evidence and External-Validation Release Notes
 
+**Release:** `v1.2.1-independent-validation`. The package manifest records the
+Git commit, tag description and SHA256 checksum of every included file.
+
 ## Scope
 
 This release separates three activities that must not be conflated:

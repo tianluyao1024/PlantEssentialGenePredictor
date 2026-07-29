@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,7 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DESTINATION = Path(r"E:\PlantEssentialGenePredictor_Zenodo")
-PACKAGE = DESTINATION / "PlantEssentialGenePredictor_independent_validation_v1_2.zip"
+PACKAGE = DESTINATION / "PlantEssentialGenePredictor_independent_validation_v1_2_1.zip"
+RELEASE_VERSION = "v1.2.1-independent-validation"
 
 FILES = [
     "README.md",
@@ -54,6 +56,16 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def git_value(*args: str) -> str:
+    """Return immutable repository provenance when Git is available."""
+    try:
+        return subprocess.check_output(
+            ["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unavailable"
+
+
 def main() -> None:
     missing = [item for item in FILES if not (ROOT / item).exists()]
     if missing:
@@ -65,7 +77,9 @@ def main() -> None:
         manifest.append({"path": name.replace("\\", "/"), "bytes": path.stat().st_size, "sha256": sha256(path)})
     metadata = {
         "title": "PlantEssentialGenePredictor independent-evidence and external-validation supplement",
-        "version": "v1.2-independent-validation",
+        "version": RELEASE_VERSION,
+        "git_commit": git_value("rev-parse", "HEAD"),
+        "git_describe": git_value("describe", "--always", "--tags", "--dirty"),
         "created_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "base_zenodo_doi": "10.5281/zenodo.21387076",
         "description": (
@@ -79,7 +93,7 @@ def main() -> None:
         "files": manifest,
     }
     readme = (
-        "# PlantEssentialGenePredictor v1.2 independent-evidence supplement\n\n"
+        "# PlantEssentialGenePredictor v1.2.1 independent-evidence supplement\n\n"
         "This package is an incremental supplement to Zenodo DOI 10.5281/zenodo.21387076. "
         "It does not include raw phenotype databases, protein-language-model weights, processed matrices or model binaries.\n\n"
         "The pre-registered external-cohort gate is intentionally enforced: the included Arabidopsis cohort has 16 records "

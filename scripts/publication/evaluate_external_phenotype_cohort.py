@@ -126,6 +126,8 @@ def main() -> None:
         "bootstrap_replicates": args.bootstrap,
         "minimum_total": args.minimum_total,
         "minimum_per_class": args.minimum_per_class,
+        "threshold_or_model_selection_performed_on_external_cohort": False,
+        "quantitative_metrics_withheld_when_minimum_not_met": True,
         "species": {},
     }
     scored = []

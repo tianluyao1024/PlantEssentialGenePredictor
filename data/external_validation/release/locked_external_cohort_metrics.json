@@ -1,8 +1,10 @@
 {
   "cohort": "results\\tpc_candidate_resource\\external_validation\\prelocked_external_phenotype_cohort.tsv",
-  "bootstrap_replicates": 10,
+  "bootstrap_replicates": 10000,
   "minimum_total": 30,
   "minimum_per_class": 10,
+  "threshold_or_model_selection_performed_on_external_cohort": false,
+  "quantitative_metrics_withheld_when_minimum_not_met": true,
   "species": {
     "arabidopsis": {
       "n": 16,
