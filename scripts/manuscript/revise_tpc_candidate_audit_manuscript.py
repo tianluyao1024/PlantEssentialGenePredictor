@@ -37,6 +37,14 @@ def insert_after(paragraph, text: str = "", style: str | None = None):
     return new_p
 
 
+def insert_before(paragraph, text: str = "", style: str | None = None):
+    new_p = paragraph._parent.add_paragraph(style=style)
+    paragraph._p.addprevious(new_p._p)
+    if text:
+        new_p.add_run(text)
+    return new_p
+
+
 def find_paragraph(document: Document, prefix: str):
     for paragraph in document.paragraphs:
         if paragraph.text.startswith(prefix):
@@ -167,7 +175,7 @@ def main() -> None:
 
     # Insert a concise supplementary-data list before the reference heading.
     reference_heading = find_paragraph(doc, "References")
-    supplement_heading = insert_after(reference_heading, style="Heading 1")
+    supplement_heading = insert_before(reference_heading, style="Heading 1")
     supplement_heading.add_run("Supplementary data release")
     s1 = add_body_after(
         supplement_heading,
