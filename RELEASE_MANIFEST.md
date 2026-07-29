@@ -28,13 +28,26 @@ These directories contain trained model files, processed feature matrices, label
 - `data/processed_features/`
 - `data/labels/`
 - `predictions/`
+- `results/tpc_candidate_resource/` (audited candidate registry, frozen-input manifest, stability and homology screens, and evidence-card templates)
+- `data/external_validation/` (locked independent phenotype-cohort schema)
 
-The released prediction tables are:
+The historical model-output tables are:
 
 - `predictions/arabidopsis_unknown20460_single_model_predictions.tsv`
 - `predictions/arabidopsis_unknown20460_joint_model_predictions.tsv`
 - `predictions/rice_unknown_all_single_model_predictions.tsv`
 - `predictions/rice_unknown_all_joint_model_predictions.tsv`
+
+The publication-facing audited tables are:
+
+- `predictions/publication_release/arabidopsis_all_feature_covered_genes_reclassified.tsv`
+- `predictions/publication_release/rice_all_feature_covered_genes_reclassified.tsv`
+- `results/tpc_candidate_resource/study_label_and_phenotype_registry.tsv`
+- `results/tpc_candidate_resource/frozen_submission_inputs.json`
+
+Only records with `candidate_status=true_unknown_candidate` should be used as
+novel candidate genes. Historical model-output filenames are retained for
+reproducibility and should not be interpreted as a pure unknown-gene release.
 
 ## Portable server-only artifacts
 

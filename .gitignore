@@ -8,6 +8,8 @@ models/
 data/processed_features/
 data/processed_features/*.npz
 predictions/*.tsv
+predictions/publication_release/
+results/
 precomputed_plm_embeddings/
 raw_data/
 plm_model_weights/

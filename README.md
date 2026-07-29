@@ -15,7 +15,38 @@ The repository provides:
 
 ## Main Released Predictions
 
-The four released prediction tables are archived on Zenodo under `predictions/`.
+The original four model-output tables remain in the archive for exact model
+reproduction. They are **not** interchangeable with a pure unknown-gene
+resource because the historical Arabidopsis feature-covered table contains
+genes later classified as modelling labels or phenotype-recorded genes.
+
+For biological interpretation and candidate selection, use the audited release
+tables under `predictions/publication_release/`. Every feature-covered gene is
+assigned exactly one status:
+
+- `known_label_used_in_study`;
+- `pseudo_label_used_in_study`;
+- `phenotype_recorded_but_excluded`;
+- `true_unknown_candidate`.
+
+Only `true_unknown_candidate` is eligible for the frozen candidate resource.
+The registry used for this exclusion is
+`results/tpc_candidate_resource/study_label_and_phenotype_registry.tsv` and
+the frozen file checksums are in
+`results/tpc_candidate_resource/frozen_submission_inputs.json`.
+
+| Audited file | Scope | Genes with `true_unknown_candidate` status |
+|---|---|---:|
+| `arabidopsis_all_feature_covered_genes_reclassified.tsv` | Arabidopsis, single-species + joint + annotation-light probabilities | 17,522 |
+| `rice_all_feature_covered_genes_reclassified.tsv` | Rice, single-species + joint + annotation-light probabilities | 17,457 |
+
+The release also contains two frozen 10-gene core candidate panels, their
+ensemble-component robustness, closest-labelled-homolog audit, and
+provenance-aware independent-evidence card templates. The `homology_isolated`
+and `homology_supported_by_essential` categories are presentation strata, not
+new phenotype labels.
+
+### Historical model-output files
 
 | File | Model | Genes predicted |
 |---|---|---:|
@@ -25,6 +56,22 @@ The four released prediction tables are archived on Zenodo under `predictions/`.
 | `rice_unknown_all_joint_model_predictions.tsv` | Joint Arabidopsis-rice model | rice genome-scale prediction set |
 
 Summary counts are in `predictions/prediction_summary.tsv`.
+
+## Independent validation protocol
+
+No post hoc candidate hit rate is reported as an unbiased performance metric.
+The repository includes a locked external phenotype-cohort protocol:
+
+- `docs/independent_validation_protocol.md`;
+- `data/external_validation/independent_phenotype_cohort_template.tsv`;
+- `scripts/publication/evaluate_external_phenotype_cohort.py`;
+- `docs/candidate_evidence_card_guidance.md`.
+
+The evaluator rejects study-label and pseudo-label genes, requires a stable
+source/date/assay/phenotype record for each included gene, and reports frozen-
+threshold AUC, AUPRC and classification metrics with stratified bootstrap 95%
+confidence intervals. Candidate evidence cards are discovery-oriented and
+clearly separated from the locked quantitative cohort.
 
 ## Code and Data Availability
 
@@ -40,6 +87,11 @@ Large artifacts are archived on Zenodo:
 ```text
 DOI: 10.5281/zenodo.21387076
 ```
+
+The prepared `v1.1-candidate-audit` supplement is staged for a Zenodo version
+update before manuscript submission. It contains the audited publication tables
+and independent-validation protocol, without duplicating raw databases or PLM
+weights. See `docs/zenodo_release.md`.
 
 Download the Zenodo artifact and extract it into the repository root so that
 `models/`, `data/processed_features/`, `data/labels/` and `predictions/` are

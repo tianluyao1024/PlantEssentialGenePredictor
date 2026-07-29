@@ -57,14 +57,21 @@ BUNDLED_MATRICES = {
     ),
 }
 BUNDLED_PREDICTIONS = {
-    "Arabidopsis unknown genes, single model": ROOT
-    / "predictions"
-    / "arabidopsis_unknown20460_single_model_predictions.tsv",
-    "Arabidopsis unknown genes, joint model": ROOT
-    / "predictions"
-    / "arabidopsis_unknown20460_joint_model_predictions.tsv",
-    "Rice all genes, single model": ROOT / "predictions" / "rice_unknown_all_single_model_predictions.tsv",
-    "Rice all genes, joint model": ROOT / "predictions" / "rice_unknown_all_joint_model_predictions.tsv",
+    "Arabidopsis: reclassified feature-covered genes (single + joint + annotation-light)": ROOT
+    / "predictions" / "publication_release" / "arabidopsis_all_feature_covered_genes_reclassified.tsv",
+    "Rice: reclassified feature-covered genes (single + joint + annotation-light)": ROOT
+    / "predictions" / "publication_release" / "rice_all_feature_covered_genes_reclassified.tsv",
+}
+PUBLICATION_RESOURCE_TABLES = {
+    "Study label and phenotype-record registry": ROOT / "results" / "tpc_candidate_resource" / "study_label_and_phenotype_registry.tsv",
+    "Frozen submission inputs and SHA256 audit": ROOT / "results" / "tpc_candidate_resource" / "frozen_submission_inputs.json",
+    "Arabidopsis final core 10 candidates": ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_candidates.tsv",
+    "Rice final core 10 candidates": ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_candidates.tsv",
+    "Arabidopsis core-candidate evidence cards": ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_evidence_cards.tsv",
+    "Rice core-candidate evidence cards": ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_evidence_cards.tsv",
+    "Automated candidate-exclusion audit": ROOT / "results" / "tpc_candidate_resource" / "candidate_exclusion_audit.tsv",
+    "Candidate-release summary": ROOT / "results" / "tpc_candidate_resource" / "candidate_release_summary.tsv",
+    "Independent phenotype cohort template": ROOT / "data" / "external_validation" / "independent_phenotype_cohort_template.tsv",
 }
 LABEL_TABLES = {
     "Arabidopsis strict2601 fixed split labels": ROOT
@@ -411,11 +418,15 @@ def run_raw_profile_prediction(
 
 
 def show_prediction_metrics(out: pd.DataFrame) -> None:
+    probability_column = "essential_probability" if "essential_probability" in out.columns else "single_species_probability"
+    label_column = "predicted_label" if "predicted_label" in out.columns else "single_species_predicted_label"
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Genes", f"{len(out):,}")
-    c2.metric("Predicted essential", f"{int(out['predicted_label'].sum()):,}")
-    c3.metric("Predicted non-essential", f"{int((out['predicted_label'] == 0).sum()):,}")
-    c4.metric("Median probability", f"{out['essential_probability'].median():.3f}")
+    labels = pd.to_numeric(out[label_column], errors="coerce").fillna(0).astype(int)
+    probabilities = pd.to_numeric(out[probability_column], errors="coerce")
+    c2.metric("Predicted essential", f"{int(labels.sum()):,}")
+    c3.metric("Predicted non-essential", f"{int((labels == 0).sum()):,}")
+    c4.metric("Median probability", f"{probabilities.median():.3f}")
 
 
 st.set_page_config(page_title="Plant Essential Gene Predictor", layout="wide")
@@ -981,12 +992,28 @@ This avoids using zeros for missing GO/PPI/expression fields. The current releas
                 )
 
 with tabs[3]:
-    st.subheader("Released manuscript prediction tables")
+    st.subheader("Released genome-scale prediction tables")
+    st.info(
+        "These publication-release tables explicitly distinguish four statuses: "
+        "`known_label_used_in_study`, `pseudo_label_used_in_study`, "
+        "`phenotype_recorded_but_excluded`, and `true_unknown_candidate`. "
+        "Only `true_unknown_candidate` is eligible for the frozen candidate resource."
+    )
     choice = st.selectbox("Prediction table", list(BUNDLED_PREDICTIONS), key="released_pred")
     path = BUNDLED_PREDICTIONS[choice]
     if path.exists():
         df = pd.read_csv(path, sep="\t")
         show_prediction_metrics(df)
+        if "candidate_status" in df.columns:
+            counts = df["candidate_status"].value_counts(dropna=False).rename_axis("candidate_status").reset_index(name="genes")
+            st.markdown("#### Candidate-status audit")
+            st.dataframe(counts, width="stretch")
+            selected_statuses = st.multiselect(
+                "Filter statuses",
+                counts["candidate_status"].astype(str).tolist(),
+                default=counts["candidate_status"].astype(str).tolist(),
+            )
+            df = df.loc[df["candidate_status"].astype(str).isin(selected_statuses)].copy()
         st.dataframe(df.head(300), width="stretch")
         st.download_button(
             "Download full table",
@@ -996,6 +1023,27 @@ with tabs[3]:
         )
     else:
         st.error(f"Missing table: {path}")
+
+    st.markdown("#### Frozen candidate-resource and validation files")
+    st.caption(
+        "Core candidate tables contain model-nomination evidence and homology-audit strata. "
+        "They are not externally validated phenotype labels; the independent cohort template is provided "
+        "to keep future validation separate from model development."
+    )
+    resource_choice = st.selectbox("Resource table", list(PUBLICATION_RESOURCE_TABLES), key="publication_resource")
+    resource_path = PUBLICATION_RESOURCE_TABLES[resource_choice]
+    if resource_path.exists():
+        preview = resource_path.read_bytes()
+        st.download_button(
+            "Download selected resource",
+            preview,
+            file_name=resource_path.name,
+            mime="application/json" if resource_path.suffix == ".json" else "text/tab-separated-values",
+        )
+        if resource_path.suffix == ".tsv":
+            st.dataframe(pd.read_csv(resource_path, sep="\t").head(100), width="stretch")
+    else:
+        st.warning(f"Resource has not been generated yet: {resource_path.name}")
 
 with tabs[4]:
     st.subheader("Known experimental and modeling-label tables")

@@ -1,7 +1,7 @@
 {
-  "title": "PlantEssentialGenePredictor: models, processed features and genome-scale predictions",
+  "title": "PlantEssentialGenePredictor: versioned models, audited phenotype labels and genome-scale candidate predictions",
   "upload_type": "dataset",
-  "description": "Processed feature matrices, trained models, fixed labels and genome-scale prediction tables associated with PlantEssentialGenePredictor, a plant essential-gene prioritization framework for Arabidopsis thaliana and rice.",
+  "description": "Versioned processed feature matrices, trained models, fixed labels, source-level phenotype audit tables, frozen input checksums, and genome-scale prediction tables associated with PlantEssentialGenePredictor, a plant essential-gene prioritization framework for Arabidopsis thaliana and rice. The audited publication release explicitly separates modelling labels, historical pseudo-labels, phenotype-recorded-but-excluded genes, and true unknown candidates.",
   "creators": [
     {
       "name": "tianluyao1024"
