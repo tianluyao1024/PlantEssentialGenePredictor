@@ -29,14 +29,16 @@ completed without author confirmation.
   unsupported entries as prediction-only rather than validated candidates.
 - [x] Archive the current computational release at Zenodo DOI
   `10.5281/zenodo.21387076` and host code at GitHub.
+- [x] Tag the matching GitHub release: `v1.2.1-independent-validation`
+  (`d5519b426a25b5f490dd756a38f54413f90af33a`).
 
 ## Must be completed before submission
 
-- [ ] Create a versioned Zenodo update containing the audited candidate tables,
-  external-validation template/evaluator, source data for Figure 6 and the
-  final release manifest. Record the version DOI and archive DOI in the
+- [ ] Upload `PlantEssentialGenePredictor_independent_validation_v1_2_1.zip`
+  as a new Zenodo version containing the audited candidate tables,
+  external-validation template/evaluator, Figure 7 source data and final
+  release manifest. Record the new version DOI and archive DOI in the
   manuscript.
-- [ ] Tag the matching GitHub release and record the immutable commit hash.
 - [ ] Expand the independently curated cohort to the pre-registered minimum
   for either species (n >= 30 and at least 10 records per class) before adding
   any external AUC/AUPRC or threshold result. Do not use records that
