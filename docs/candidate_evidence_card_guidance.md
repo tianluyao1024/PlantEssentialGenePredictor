@@ -4,6 +4,12 @@ Each core candidate receives two or more **non-training-source** evidence rows
 before being presented as a representative biological case in the manuscript.
 Use the templates in `results/tpc_candidate_resource/*_final_core10_evidence_cards.tsv`.
 
+The accompanying `*_final_core10_uniprot_context.tsv` files provide protein
+names, functional descriptions and localization context to guide literature
+curation. They are explicitly marked `requires_independence_review`; they are
+not evidence-card rows and cannot count toward the two-category requirement
+without a curator locating the underlying independent experimental source.
+
 ## Accepted evidence categories
 
 * Independent loss-of-function phenotype or new public mutant record.

@@ -32,6 +32,8 @@ RESOURCE_FILES = [
     ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_candidates.tsv",
     ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_evidence_cards.tsv",
     ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_evidence_cards.tsv",
+    ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_uniprot_context.tsv",
+    ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_uniprot_context.tsv",
     ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_candidate_ensemble_stability.tsv",
     ROOT / "results" / "tpc_candidate_resource" / "rice_candidate_ensemble_stability.tsv",
     ROOT / "results" / "tpc_candidate_resource" / "ensemble_stability_manifest.json",
@@ -51,6 +53,7 @@ DOC_FILES = [
     ROOT / "scripts" / "publication" / "prepare_core_candidate_evidence_cards.py",
     ROOT / "scripts" / "publication" / "audit_candidate_exclusions.py",
     ROOT / "scripts" / "publication" / "evaluate_external_phenotype_cohort.py",
+    ROOT / "scripts" / "publication" / "fetch_uniprot_candidate_context.py",
     ROOT / "scripts" / "manuscript" / "generate_audited_candidate_resource_figure.py",
 ]
 
