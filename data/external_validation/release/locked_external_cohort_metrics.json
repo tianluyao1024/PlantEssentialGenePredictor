@@ -1,0 +1,15 @@
+{
+  "cohort": "results\\tpc_candidate_resource\\external_validation\\prelocked_external_phenotype_cohort.tsv",
+  "bootstrap_replicates": 10,
+  "minimum_total": 30,
+  "minimum_per_class": 10,
+  "species": {
+    "arabidopsis": {
+      "n": 16,
+      "essential": 9,
+      "nonessential": 7,
+      "eligible_for_quantitative_evaluation": false,
+      "reason": "Pre-registered external-cohort minimum not met: requires n >= 30 and >= 10 per class."
+    }
+  }
+}

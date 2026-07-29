@@ -67,11 +67,17 @@ PUBLICATION_RESOURCE_TABLES = {
     "Frozen submission inputs and SHA256 audit": ROOT / "results" / "tpc_candidate_resource" / "frozen_submission_inputs.json",
     "Arabidopsis final core 10 candidates": ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_candidates.tsv",
     "Rice final core 10 candidates": ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_candidates.tsv",
-    "Arabidopsis core-candidate evidence cards": ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_evidence_cards.tsv",
-    "Rice core-candidate evidence cards": ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_evidence_cards.tsv",
+    "Arabidopsis core-candidate evidence cards (independent evidence appended)": ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_evidence_cards_with_independent_evidence.tsv",
+    "Rice core-candidate evidence cards (independent evidence appended)": ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_evidence_cards_with_independent_evidence.tsv",
+    "Arabidopsis core-candidate evidence-card summary": ROOT / "results" / "tpc_candidate_resource" / "arabidopsis_final_core10_evidence_card_summary.tsv",
+    "Rice core-candidate evidence-card summary": ROOT / "results" / "tpc_candidate_resource" / "rice_final_core10_evidence_card_summary.tsv",
     "Automated candidate-exclusion audit": ROOT / "results" / "tpc_candidate_resource" / "candidate_exclusion_audit.tsv",
     "Candidate-release summary": ROOT / "results" / "tpc_candidate_resource" / "candidate_release_summary.tsv",
     "Independent phenotype cohort template": ROOT / "data" / "external_validation" / "independent_phenotype_cohort_template.tsv",
+    "Europe PMC external-source screening ledger": ROOT / "results" / "tpc_candidate_resource" / "external_source_screening" / "europe_pmc_source_screening_ledger.tsv",
+    "Curated external-source screening ledger": ROOT / "results" / "tpc_candidate_resource" / "external_validation" / "curated_external_source_screening_ledger.tsv",
+    "Prelocked external cohort status (metrics withheld when underpowered)": ROOT / "results" / "tpc_candidate_resource" / "external_validation" / "locked_external_cohort_metrics.json",
+    "External-validation release manifest": ROOT / "results" / "tpc_candidate_resource" / "external_validation" / "external_validation_release_summary.json",
 }
 LABEL_TABLES = {
     "Arabidopsis strict2601 fixed split labels": ROOT
@@ -1027,8 +1033,8 @@ with tabs[3]:
     st.markdown("#### Frozen candidate-resource and validation files")
     st.caption(
         "Core candidate tables contain model-nomination evidence and homology-audit strata. "
-        "They are not externally validated phenotype labels; the independent cohort template is provided "
-        "to keep future validation separate from model development."
+        "The source-screening ledgers, zero-overlap audit and prelocked cohort status are published separately. "
+        "No external AUC/AUPRC is shown unless the pre-registered cohort minimum is met."
     )
     resource_choice = st.selectbox("Resource table", list(PUBLICATION_RESOURCE_TABLES), key="publication_resource")
     resource_path = PUBLICATION_RESOURCE_TABLES[resource_choice]

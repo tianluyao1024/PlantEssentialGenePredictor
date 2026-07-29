@@ -48,19 +48,22 @@ The published Zenodo DOI is:
 10.5281/zenodo.21387076
 ```
 
-## Required v1.1 candidate-audit update
+## Required v1.2 independent-evidence update
 
 Before manuscript submission, create a new version of the existing Zenodo
-record and retain the original base artifact. Add the prepared supplement:
+record and retain the original base artifact. Generate and add the prepared
+supplement:
 
 ```text
-E:\PlantEssentialGenePredictor_Zenodo\PlantEssentialGenePredictor_audited_candidate_resource_v1_1.zip
+python scripts/release/create_independent_validation_supplement.py
 ```
 
-The supplement contains the audited publication-release prediction tables,
-candidate-exclusion audit, frozen-input manifest, ten-gene core panels,
-independent-validation template and the scripts required to reproduce the
-candidate audit. Its SHA256 checksum is recorded in the generated manifest.
+The generated `PlantEssentialGenePredictor_independent_validation_v1_2.zip`
+contains the source-screening ledger, curator-checked direct loss-of-function
+records, zero-overlap audit, prelocked external-cohort status, evidence-card
+tables, Figure 7 source data and the scripts required to reproduce the audit.
+It does not duplicate raw databases, PLM weights, large matrices or model
+binaries. Its SHA256 checksum and per-file manifest are written into the zip.
 After publishing the new version, update the README, manuscript and release
 notes with both the immutable version DOI and the concept DOI.
 

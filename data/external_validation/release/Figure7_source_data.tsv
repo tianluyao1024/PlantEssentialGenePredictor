@@ -1,0 +1,16 @@
+panel	measure	value	species	observed	pre_registered_minimum	gene_id	single_species_probability	independent_evidence_categories	direct_evidence_direction	main_text_evidence_card_eligible	evidence_status	n_core_candidates
+a	articles	312.0										
+a	gene-level source records	919.0										
+a	automated true-unknown eligible records	108.0										
+a	direct LoF records	19.0										
+a	Arabidopsis direct LoF records	16.0										
+b	essential		Arabidopsis	9.0	10.0							
+b	non-essential		Arabidopsis	7.0	10.0							
+b	total		Arabidopsis	16.0	30.0							
+b	curated direct LoF		Rice	0.0	30.0							
+c			arabidopsis			AT1G01970	0.5136426091194153	A_direct;B_functional	direct_essential_support	yes		
+c			arabidopsis			AT4G01400	0.5344188809394836	A_direct;B_functional;C_material	direct_viable_or_counterexample	yes		
+d			Arabidopsis								evidence-card eligible	2.0
+d			Arabidopsis								prediction only	8.0
+d			Rice								evidence-card eligible	0.0
+d			Rice								prediction only	10.0

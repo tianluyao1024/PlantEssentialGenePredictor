@@ -21,7 +21,9 @@ One row represents one gene-level experimental observation. A row is eligible
 only when all of the following are true:
 
 1. The gene does not appear in the study label registry as
-   `known_label_used_in_study` or `pseudo_label_used_in_study`.
+   `known_label_used_in_study`, `pseudo_label_used_in_study`, or
+   `phenotype_recorded_but_excluded`. This last exclusion prevents reuse of a
+   phenotype record that was archived but not retained in a final label set.
 2. The observation was not used to make any phenotype source archive, label,
    pseudo-label, train/validation/test split, model weight, or candidate rank.
 3. The evidence is a published or publicly released loss-of-function,
@@ -60,11 +62,16 @@ may be retained only as qualitative evidence cards.
 Use `data/external_validation/independent_phenotype_cohort_template.tsv`.
 Set `include_in_locked_cohort=yes` only after all eligibility checks are
 complete. The evaluator refuses rows with missing provenance, non-independent
-flags, or a gene that overlaps the study-label registry.
+flags, or a gene that overlaps any prohibited study-label or raw-phenotype
+registry status.
 
 ## Reporting
 
-Report cohort size, class counts, source distribution, date range, all
-exclusions, AUC, AUPRC, sensitivity, specificity, precision and F1. AUC and
-AUPRC use probabilities; the remaining metrics use the pre-locked single
-species threshold. Do not tune a threshold on this cohort.
+The pre-registered quantitative requirement is at least 30 genes per species,
+including at least 10 essential and 10 viable/non-essential genes. If this is
+not met, the evaluator writes an underpowered status report and does **not**
+calculate external AUC, AUPRC, or threshold metrics. Otherwise report cohort
+size, class counts, source distribution, date range, all exclusions, AUC,
+AUPRC, sensitivity, specificity, precision and F1. AUC and AUPRC use
+probabilities; the remaining metrics use the pre-locked single-species
+threshold. Do not tune a threshold on this cohort.

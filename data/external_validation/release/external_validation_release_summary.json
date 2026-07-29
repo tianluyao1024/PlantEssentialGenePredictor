@@ -1,0 +1,34 @@
+{
+  "curated_records": 19,
+  "prelocked_records": 16,
+  "prelocked_by_species_and_label": [
+    {
+      "species": "arabidopsis",
+      "essential_label": "0",
+      "n": 7
+    },
+    {
+      "species": "arabidopsis",
+      "essential_label": "1",
+      "n": 9
+    }
+  ],
+  "zero_prohibited_overlap": true,
+  "all_true_unknown_candidates": true,
+  "candidate_evidence_rows_appended": {
+    "arabidopsis": 5,
+    "rice": 0
+  },
+  "core_candidate_cards_eligible_for_main_text": {
+    "arabidopsis": 2,
+    "rice": 0
+  },
+  "quantitative_evaluation_policy": "The frozen evaluator withholds AUC/AUPRC and threshold metrics below n=30 per species with >=10 per class.",
+  "frozen_input_sha256": {
+    "curated_external_phenotype_records": "88ec0c789fb610c77f813994e2e9447e924bdcd4cf936cbda00220dafa618f5f",
+    "candidate_independent_evidence": "ddd0796cbd95a23f94a8eac6bc53c527c1792977a7bd4d55a13293bfa3bfaf7a",
+    "study_label_and_phenotype_registry": "24322f5a87a8885963ac03564d0c837ab20c762a3fcadc8df2712b7a7e51c12b",
+    "released_arabidopsis_predictions": "fa7f4cdda61b031d992e7d64267f31ae6342e98f587cc35cb64d5d092bcecc3d",
+    "released_rice_predictions": "9ffdad017a286529d8cf35c2edc7bcd8ac240fd174bc5cbe6470f65f47108963"
+  }
+}

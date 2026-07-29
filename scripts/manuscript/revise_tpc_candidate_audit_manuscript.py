@@ -1,8 +1,9 @@
-"""Create a The Plant Cell-oriented candidate-audit manuscript revision.
+"""Create a The Plant Cell-oriented independent-validation manuscript draft.
 
-This script deliberately reports the audited candidate resource and the
-prespecified independent-validation protocol, but it does not invent external
-phenotype validation results. The source document remains unchanged.
+The draft reports only the actual result of the frozen external-evidence gate:
+the current curated cohort is below the pre-registered size/class minimum, so
+it deliberately contains no external AUC/AUPRC or threshold-performance claim.
+The source document remains unchanged.
 """
 
 from __future__ import annotations
@@ -16,8 +17,9 @@ from docx.shared import Inches, Pt
 
 
 SOURCE = Path(r"C:\Users\tly\Downloads\Plant_essential_gene_prediction_manuscript_web_deployment_Nature_style.docx")
-OUTPUT = Path(r"C:\Users\tly\Downloads\Plant_essential_gene_prediction_manuscript_ThePlantCell_candidate_audit_draft.docx")
+OUTPUT = Path(r"C:\Users\tly\Downloads\Plant_essential_gene_prediction_manuscript_ThePlantCell_independent_validation_draft.docx")
 FIGURE = Path(r"E:\PlantEssentialGenePredictor\results\manuscript_figures\figure6_audited_candidate_resource\Figure6_audited_candidate_resource.png")
+FIGURE7 = Path(r"E:\PlantEssentialGenePredictor\results\manuscript_figures\figure7_external_evidence_boundary\Figure7_external_evidence_boundary.png")
 
 
 def set_text(paragraph, text: str) -> None:
@@ -80,8 +82,9 @@ def add_figure_after(paragraph, figure: Path):
 def main() -> None:
     if not SOURCE.exists():
         raise FileNotFoundError(SOURCE)
-    if not FIGURE.exists():
-        raise FileNotFoundError(FIGURE)
+    for figure in (FIGURE, FIGURE7):
+        if not figure.exists():
+            raise FileNotFoundError(figure)
     doc = Document(SOURCE)
 
     set_text(
@@ -90,12 +93,12 @@ def main() -> None:
     )
     set_text(
         doc.paragraphs[2],
-        "The Plant Cell-oriented manuscript draft with frozen model evaluation, an audited candidate resource and a prespecified independent-validation protocol.",
+        "The Plant Cell-oriented manuscript draft with frozen model evaluation, an audited candidate resource and a bounded independent-evidence analysis.",
     )
     abstract = find_paragraph(doc, "Essential genes are central")
     set_text(
         abstract,
-        "Essential genes support plant viability, development and fertility, yet genome-scale experimental essentiality maps remain incomplete in plants. Here we developed a leakage-aware framework that integrates conservative phenotype-label curation with a common 6,751-dimensional representation of Arabidopsis thaliana and Oryza sativa genes. The representation combines 95 biological features with ESM2, ProtBERT and ProtT5 protein-language-model embeddings. On fixed held-out test sets, species-specific models achieved area under the receiver-operating-characteristic curve (AUC) values of 0.9175 in Arabidopsis and 0.8812 in rice. A joint model gave numerically higher rice AUC but no significant paired DeLong improvement, and modestly lower Arabidopsis AUC. Feature ablation and homology-cluster evaluation showed complementary biological and sequence-representation signal while exposing annotation dependence and sequence-similarity effects. To separate discovery from label reuse, we audited all feature-covered genes against study labels, pseudo-labels and raw phenotype-record sources. The resulting release contains 17,522 Arabidopsis and 17,457 rice true-unknown candidates, alongside a curated core set of ten candidates per species. We provide the locked splits, model assets, code, candidate audit, a public prediction interface and a prespecified independent phenotype-validation protocol. The resource is intended for evidence-based candidate prioritization rather than replacement of experimental confirmation.",
+        "Essential genes support plant viability, development and fertility, yet genome-scale experimental essentiality maps remain incomplete in plants. Here we developed a leakage-aware framework that integrates conservative phenotype-label curation with a common 6,751-dimensional representation of Arabidopsis thaliana and Oryza sativa genes. The representation combines 95 biological features with ESM2, ProtBERT and ProtT5 protein-language-model embeddings. On fixed held-out test sets, species-specific models achieved area under the receiver-operating-characteristic curve (AUC) values of 0.9175 in Arabidopsis and 0.8812 in rice. A joint model gave numerically higher rice AUC but no significant paired DeLong improvement, and modestly lower Arabidopsis AUC. Feature ablation and homology-cluster evaluation showed complementary biological and sequence-representation signal while exposing annotation dependence and sequence-similarity effects. To separate discovery from label reuse, we audited all feature-covered genes against study labels, pseudo-labels and raw phenotype-record sources. The resulting release contains 17,522 Arabidopsis and 17,457 rice true-unknown candidates, alongside a curated core set of ten candidates per species. A targeted external source screen generated 312 articles and 919 gene-level records; 19 curator-checked direct loss-of-function records passed the zero-overlap audit. The pre-registered cohort-size requirement was not met, so no external performance estimate is reported. We provide locked splits, model assets, code, candidate audit and a public prediction interface for evidence-based candidate prioritization rather than replacement of experimental confirmation.",
     )
 
     web_heading = find_paragraph(doc, "A web-accessible predictor supports")
@@ -129,11 +132,21 @@ def main() -> None:
     h2 = add_heading_after(fig_caption, "Prespecified independent phenotype-validation framework")
     b3 = add_body_after(
         h2,
-        "Candidate-level functional annotations, GO terms, PPI attributes and expression summaries can help formulate mechanistic hypotheses, but they are not treated as independent validation when the same source family contributed to the feature matrix. We therefore created a locked external-cohort schema that requires each external phenotype record to document its publication or database source, release date, experimental modality, phenotype stage, essentiality rule and evidence that it was not used in label curation, pseudo-labeling, feature encoding, model fitting or threshold selection.",
+        "Candidate-level functional annotations, GO terms, PPI attributes and expression summaries can help formulate mechanistic hypotheses, but they are not treated as independent validation when the same source family contributed to the feature matrix. We therefore screened public literature and open mutant records with a source ledger that records the query, date, stable identifier, normalized gene ID, inclusion or exclusion decision and source-level provenance. Each direct phenotype record was required to be absent from the frozen study-label registry, pseudo-label registry and every archived raw phenotype source before allele-level manual adjudication.",
     )
     b4 = add_body_after(
         b3,
-        "Quantitative external-cohort performance will be reported only after this independently curated cohort has been locked before inspection of prediction outcomes. The accompanying evaluator calculates AUC, AUPRC, sensitivity, specificity, precision and F1 with stratified bootstrap confidence intervals without retraining or reselecting thresholds. Accordingly, the current core candidates are discovery hypotheses with transparent model and homology evidence, not confirmed essential genes.",
+        "The initial curated set comprised 19 direct Arabidopsis loss-of-function records, of which 16 met all phenotype-adjudication requirements for a prelocked cohort (nine essential and seven viable/non-essential). All 19 passed the automated zero-overlap audit. However, the preregistered requirement was at least 30 genes per species and at least ten genes per class. The cohort therefore failed the gate, and the frozen evaluator withheld external AUC, AUPRC, sensitivity, specificity, precision and F1. The same screening identified no curator-locked rice record. Thus, neither species is assigned an external performance estimate in this manuscript.",
+    )
+    figure7_p = add_figure_after(b4, FIGURE7)
+    figure7_caption = add_caption_after(
+        figure7_p,
+        "Figure 7. Independent-evidence boundary and qualitative candidate cards. (a) Europe PMC literature screening, automated exclusion against the frozen study registry and manual allele-level direct loss-of-function curation. (b) The pre-registered external-cohort gate. The 16 curated Arabidopsis records (nine essential and seven viable/non-essential) and zero curator-locked rice records did not meet the required n >= 30 per species and n >= 10 per class; external discrimination and threshold metrics were therefore not calculated. (c) Two Arabidopsis core candidates with at least two independent evidence categories. DG409 (AT1G01970) has direct CRISPR embryo-lethality evidence and functional organellar evidence. MISF74 (AT4G01400) is retained as a qualitative counterexample because viable but severely growth-retarded insertion mutants were reported. (d) Evidence coverage of frozen core candidates. Prediction-only entries are not presented as biologically validated examples.",
+    )
+    h3 = add_heading_after(figure7_caption, "Independent evidence is informative but not yet a second performance test")
+    add_body_after(
+        h3,
+        "The locked evidence set nevertheless illustrates the intended use of the resource. For DG409 (AT1G01970), a 2023 CRISPR study reported embryo lethality, and experimental work linked the encoded PPR protein to chloroplast and mitochondrial development. In contrast, MISF74 (AT4G01400), a high-scoring core candidate, has published viable insertion mutants with severe growth retardation and mitochondrial intron-splicing defects. We report this counterexample rather than selectively presenting only concordant cases. Eight Arabidopsis and all ten rice core candidates remain prediction-only resource entries because they do not yet satisfy the requirement for at least two independent evidence categories.",
     )
 
     discussion_first = find_paragraph(doc, "This study supports three main conclusions")
@@ -148,7 +161,7 @@ def main() -> None:
     )
     add_body_after(
         d1,
-        "The next evidentiary step is an external phenotype cohort or targeted mutant validation that is genuinely independent of all model-development decisions. The released cohort template, automated independence checks and candidate evidence-card schema make this transition reproducible. In the interim, public predictions should be used to prioritize experiments, combine orthogonal evidence and guide resource allocation rather than to replace phenotypic assays.",
+        "The next evidentiary step is expansion of the independently curated phenotype cohort or targeted mutant validation that is genuinely independent of all model-development decisions. The present source screen demonstrates both the value and the difficulty of this requirement: most literature-derived gene records were excluded because they overlapped historical phenotype archives, lacked stable gene-to-allele resolution or described compound/conditional genotypes. The released source ledger, automated independence checks and evidence-card schema make expansion reproducible. In the interim, public predictions should be used to prioritize experiments, combine orthogonal evidence and guide resource allocation rather than to replace phenotypic assays.",
     )
 
     method_anchor = find_paragraph(doc, "ROC AUC and AUPRC")
@@ -164,13 +177,13 @@ def main() -> None:
     mh2 = add_heading_after(mb2, "Independent phenotype-validation protocol")
     add_body_after(
         mh2,
-        "The external-cohort evaluator accepts only phenotype records that include a stable source identifier, publication or release date, experiment type, developmental stage, binary label under a prespecified rule and an explicit independence declaration. It rejects records overlapping model labels or pseudo-labels and records derived from feature sources that directly encode the target phenotype. The cohort must be frozen before predictions are inspected. Continuous probabilities are then evaluated without retraining; thresholded metrics use the already locked validation-derived threshold and 95% confidence intervals are computed by stratified bootstrap resampling.",
+        "The external-cohort evaluator accepts only phenotype records that include a stable source identifier, publication or release date, experiment type, developmental stage, binary label under a prespecified rule and an explicit independence declaration. It rejects records overlapping model labels, pseudo-labels or phenotype-recorded-but-excluded genes, including all raw phenotype archives used during data collection. The cohort must be frozen before predictions are inspected. Quantitative evaluation is enabled only for a species with at least 30 genes and at least ten genes in each class; otherwise an underpowered status report is written and no metric is calculated. If enabled in a later release, continuous probabilities will be evaluated without retraining, thresholded metrics will use the already locked validation-derived threshold and 95% confidence intervals will be computed by 10,000 stratified bootstrap resamples.",
     )
 
     availability = find_paragraph(doc, "Code, processed label tables")
     set_text(
         availability,
-        "Code, processed label tables, fixed train/validation/test splits, feature lists, trained model assets, genome-scale prediction tables and figure-generation scripts are available at https://github.com/tianluyao1024/PlantEssentialGenePredictor. The archived release is available from Zenodo (https://doi.org/10.5281/zenodo.21387076). Before submission, the next versioned archive will include the audited candidate-release tables, core candidate evidence cards, external-validation template and the corresponding release manifest. The web interface is available at https://plantessentialgene.com.",
+        "Code, processed label tables, fixed train/validation/test splits, feature lists, trained model assets, genome-scale prediction tables and figure-generation scripts are available at https://github.com/tianluyao1024/PlantEssentialGenePredictor. The archived release is available from Zenodo (https://doi.org/10.5281/zenodo.21387076). The final submission archive will contain the source-screening ledger, curated-record audit, prelocked cohort status report, evidence-card tables, figure source data and frozen-input checksums. The web interface is available at https://plantessentialgene.com.",
     )
 
     # Insert a concise supplementary-data list before the reference heading.
@@ -179,13 +192,13 @@ def main() -> None:
     supplement_heading.add_run("Supplementary data release")
     s1 = add_body_after(
         supplement_heading,
-        "Supplementary Data 1: audited Arabidopsis genome-scale prediction table with mutually exclusive publication status. Supplementary Data 2: audited rice genome-scale prediction table with mutually exclusive publication status. Supplementary Data 3: Arabidopsis and rice core-candidate evidence cards. Supplementary Data 4: automated candidate-exclusion audit. Supplementary Data 5: locked independent phenotype-validation cohort template and evaluator protocol.",
+        "Supplementary Data 1: audited Arabidopsis genome-scale prediction table with mutually exclusive publication status. Supplementary Data 2: audited rice genome-scale prediction table with mutually exclusive publication status. Supplementary Data 3: Arabidopsis and rice core-candidate evidence cards and evidence-card summaries. Supplementary Data 4: automated candidate-exclusion audit. Supplementary Data 5: Europe PMC source-screening ledger and curated external source-screening ledger. Supplementary Data 6: curator-checked direct loss-of-function records, zero-overlap audit and prelocked external-cohort status report. Supplementary Data 7: Figure 6 and Figure 7 source data, release manifest and reproducibility pipeline.",
     )
     s1.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
     doc.core_properties.title = "Leakage-aware plant essential-gene candidate prioritization"
     doc.core_properties.subject = "The Plant Cell-oriented manuscript revision"
-    doc.core_properties.comments = "Candidate audit and independent-validation protocol added; no external phenotype results are fabricated."
+    doc.core_properties.comments = "Independent source screening and the pre-registered underpowered external-cohort result added; no external performance metric is fabricated."
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     doc.save(OUTPUT)
     print(f"Wrote {OUTPUT}")

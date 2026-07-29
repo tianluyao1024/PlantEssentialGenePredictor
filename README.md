@@ -73,6 +73,22 @@ threshold AUC, AUPRC and classification metrics with stratified bootstrap 95%
 confidence intervals. Candidate evidence cards are discovery-oriented and
 clearly separated from the locked quantitative cohort.
 
+### Current independent-evidence status
+
+The public release now includes an auditable Europe PMC source-screening ledger
+(312 articles; 919 gene-level source records), 19 curator-checked direct
+Arabidopsis LoF records and their zero-overlap audit. Sixteen records (nine
+essential and seven viable/non-essential) meet the phenotype-adjudication rules
+for a prelocked Arabidopsis cohort. This is below the pre-registered minimum of
+30 genes per species and 10 genes per class; no external AUC, AUPRC or
+threshold metric is reported. No rice record has yet completed curator locking.
+
+The lightweight release tables are in `data/external_validation/release/`; the
+complete source-screening policy and reproduction instructions are in
+`docs/external_validation_release_notes.md`. The manuscript therefore treats
+the current evidence as qualitative candidate context, not a second unbiased
+performance test.
+
 ## Code and Data Availability
 
 Code, documentation and the Streamlit web application are hosted on GitHub:

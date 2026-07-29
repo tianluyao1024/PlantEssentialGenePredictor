@@ -1,14 +1,17 @@
 """Evaluate a locked, independently curated phenotype cohort.
 
-The tool is intentionally strict: it refuses genes used as study labels or
-pseudo-labels and requires provenance/independence fields before reporting
-metrics. It never retrains or selects a threshold.
+The tool is intentionally strict: it refuses genes used as study labels,
+pseudo-labels, or any archived phenotype source, and requires
+provenance/independence fields before reporting metrics. It never retrains or
+selects a threshold.  Quantitative metrics are deliberately withheld unless a
+pre-registered minimum cohort size and class balance are met.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REGISTRY = ROOT / "results" / "tpc_candidate_resource" / "study_label_and_phenotype_registry.tsv"
 PUBLISHED = ROOT / "predictions" / "publication_release"
 OUT = ROOT / "results" / "tpc_candidate_resource" / "external_validation"
+RELEASE = ROOT / "data" / "external_validation" / "release"
 REQUIRED = {
     "species", "gene_id", "essential_label", "evidence_source",
     "source_url_or_accession", "publication_or_release_date",
@@ -27,6 +31,11 @@ REQUIRED = {
     "adjudication_rule", "independent_of_training_labels",
     "independent_of_pseudo_labels", "independent_of_model_features",
     "include_in_locked_cohort", "evidence_curator", "exclusion_reason",
+}
+PROHIBITED_REGISTRY_STATUS = {
+    "known_label_used_in_study",
+    "pseudo_label_used_in_study",
+    "phenotype_recorded_but_excluded",
 }
 
 
@@ -70,6 +79,8 @@ def main() -> None:
     parser.add_argument("cohort", type=Path, help="TSV following the locked cohort schema")
     parser.add_argument("--bootstrap", type=int, default=10_000)
     parser.add_argument("--seed", type=int, default=20260729)
+    parser.add_argument("--minimum-total", type=int, default=30)
+    parser.add_argument("--minimum-per-class", type=int, default=10)
     args = parser.parse_args()
 
     cohort = pd.read_csv(args.cohort, sep="\t", dtype=str, keep_default_na=False)
@@ -97,14 +108,26 @@ def main() -> None:
         raise ValueError("Duplicate gene rows are not allowed in a locked cohort")
 
     registry = pd.read_csv(REGISTRY, sep="\t", dtype=str, keep_default_na=False)
-    prohibited = registry.loc[registry["candidate_status"].isin(["known_label_used_in_study", "pseudo_label_used_in_study"]), ["species", "gene_id_key"]]
+    prohibited = registry.loc[
+        registry["candidate_status"].isin(PROHIBITED_REGISTRY_STATUS),
+        ["species", "gene_id_key", "candidate_status"],
+    ]
     overlap = cohort.merge(prohibited.assign(_study_overlap=True), on=["species", "gene_id_key"], how="left")
     overlap = overlap.loc[overlap["_study_overlap"].eq(True)]
     if not overlap.empty:
-        raise ValueError("External cohort overlaps study labels/pseudo-labels: " + ", ".join(overlap["gene_id"]))
+        details = ", ".join(
+            f"{row.gene_id} ({row.candidate_status})" for row in overlap.itertuples(index=False)
+        )
+        raise ValueError("External cohort overlaps a prohibited study phenotype record: " + details)
 
     OUT.mkdir(parents=True, exist_ok=True)
-    summary: dict[str, object] = {"cohort": str(args.cohort), "bootstrap_replicates": args.bootstrap, "species": {}}
+    summary: dict[str, object] = {
+        "cohort": str(args.cohort),
+        "bootstrap_replicates": args.bootstrap,
+        "minimum_total": args.minimum_total,
+        "minimum_per_class": args.minimum_per_class,
+        "species": {},
+    }
     scored = []
     for species, subset in cohort.groupby("species", sort=True):
         pred_path = PUBLISHED / f"{species}_all_feature_covered_genes_reclassified.tsv"
@@ -117,8 +140,27 @@ def main() -> None:
             raise ValueError(f"No released prediction for: {joined.loc[joined['single_species_probability'].isna(), 'gene_id'].tolist()}")
         y = joined["essential_label"].to_numpy(int)
         p = joined["single_species_probability"].to_numpy(float)
-        if len(np.unique(y)) != 2:
-            raise ValueError(f"{species} cohort requires both essential and non-essential genes")
+        n_essential = int(y.sum())
+        n_nonessential = int((y == 0).sum())
+        eligible = (
+            len(np.unique(y)) == 2
+            and len(joined) >= args.minimum_total
+            and n_essential >= args.minimum_per_class
+            and n_nonessential >= args.minimum_per_class
+        )
+        if not eligible:
+            summary["species"][species] = {
+                "n": int(len(joined)),
+                "essential": n_essential,
+                "nonessential": n_nonessential,
+                "eligible_for_quantitative_evaluation": False,
+                "reason": (
+                    "Pre-registered external-cohort minimum not met: requires "
+                    f"n >= {args.minimum_total} and >= {args.minimum_per_class} per class."
+                ),
+            }
+            scored.append(joined)
+            continue
         thresholds = joined["single_species_threshold"].unique()
         if len(thresholds) != 1:
             raise ValueError(f"{species} has inconsistent frozen thresholds: {thresholds.tolist()}")
@@ -126,12 +168,16 @@ def main() -> None:
         point = metrics(y, p, threshold)
         intervals = bootstrap(y, p, threshold, args.bootstrap, args.seed)
         summary["species"][species] = {
-            "n": int(len(joined)), "essential": int(y.sum()), "nonessential": int((y == 0).sum()),
+            "n": int(len(joined)), "essential": n_essential, "nonessential": n_nonessential,
+            "eligible_for_quantitative_evaluation": True,
             "frozen_single_species_threshold": threshold, "point_estimates": point, "bootstrap_95_ci": intervals,
         }
         scored.append(joined)
     pd.concat(scored, ignore_index=True).to_csv(OUT / "locked_external_cohort_scored.tsv", sep="\t", index=False)
     (OUT / "locked_external_cohort_metrics.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    RELEASE.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(OUT / "locked_external_cohort_scored.tsv", RELEASE / "locked_external_cohort_scored.tsv")
+    shutil.copy2(OUT / "locked_external_cohort_metrics.json", RELEASE / "locked_external_cohort_metrics.json")
     print(json.dumps(summary, indent=2))
 
 

@@ -1,0 +1,11 @@
+species	gene_id	candidate_rank	single_species_probability	joint_probability	annotation_light_probability	homology_category	independent_evidence_categories	n_independent_evidence_categories	direct_evidence_direction	main_text_evidence_card_eligible	evidence_ids	candidate_resource_status
+arabidopsis	AT5G61140	78	0.5728995203971863	0.7033261500027271	0.9028850002128772	homology_supported_by_essential		0	prediction_only	no		prediction_only
+arabidopsis	AT1G04480	1	0.7521085739135742	0.836277631307706	0.9479271475492488	homology_supported_by_essential		0	prediction_only	no		prediction_only
+arabidopsis	AT1G01970	113	0.5136426091194153	0.6999346553443936	0.8972352388577147	homology_isolated	A_direct;B_functional	2	direct_essential_support	yes	ATH_DG409_A_DIRECT;ATH_DG409_B_FUNCTIONAL	independent_evidence_curated
+arabidopsis	AT4G28010	22	0.5620155334472656	0.8173119700905408	0.926951135452742	homology_isolated		0	prediction_only	no		prediction_only
+arabidopsis	AT4G01400	54	0.5344188809394836	0.7375061555605041	0.930524478502522	homology_isolated	A_direct;B_functional;C_material	3	direct_viable_or_counterexample	yes	ATH_MISF74_A_DIRECT;ATH_MISF74_B_FUNCTIONAL;ATH_MISF74_C_MATERIAL	independent_evidence_curated
+arabidopsis	AT4G23420	443	0.5714784264564514	0.5541541114583133	0.7162566658406649	homology_supported_by_essential		0	prediction_only	no		prediction_only
+arabidopsis	AT1G26460	46	0.5073145627975464	0.7406949520897901	0.9663934705421472	homology_isolated		0	prediction_only	no		prediction_only
+arabidopsis	AT2G42270	31	0.6117765307426453	0.7618919368825223	0.9154854228605004	homology_supported_by_essential		0	prediction_only	no		prediction_only
+arabidopsis	AT4G21880	2	0.6572340130805969	0.8110981328841522	0.9551748365255988	homology_supported_by_essential		0	prediction_only	no		prediction_only
+arabidopsis	AT2G15980	19	0.5394294857978821	0.7854337266405785	0.952072449662933	homology_isolated		0	prediction_only	no		prediction_only
