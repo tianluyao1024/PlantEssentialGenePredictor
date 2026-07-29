@@ -4,6 +4,12 @@ Each core candidate receives two or more **non-training-source** evidence rows
 before being presented as a representative biological case in the manuscript.
 Use the templates in `results/tpc_candidate_resource/*_final_core10_evidence_cards.tsv`.
 
+The release summary reports a `material_availability_status` for every frozen
+candidate. `not_curated_not_evidence_of_unavailability` is deliberately
+different from a negative material search: it means that a curator has not yet
+verified a stock or germplasm catalogue. It must never be interpreted as
+evidence that no material exists.
+
 The accompanying `*_final_core10_uniprot_context.tsv` files provide protein
 names, functional descriptions and localization context to guide literature
 curation. They are explicitly marked `requires_independence_review`; they are

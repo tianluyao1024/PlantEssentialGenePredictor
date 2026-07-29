@@ -108,10 +108,24 @@ def build_candidate_card_summaries() -> dict[str, int]:
             direct = records.loc[records["evidence_category"].eq("A_direct")] if not records.empty else records
             if direct.empty:
                 direction = "prediction_only"
+                direct_status = "no_independent_direct_LoF_record_curated"
             elif direct["supports_essentiality"].eq("yes").any():
                 direction = "direct_essential_support"
+                direct_status = "independent_direct_LoF_supports_essentiality"
             else:
                 direction = "direct_viable_or_counterexample"
+                direct_status = "independent_direct_LoF_viable_or_counterexample"
+            material = records.loc[records["evidence_category"].eq("C_material")] if not records.empty else records
+            reported_material = records.loc[records["material_accession_or_availability"].ne("")] if not records.empty else records
+            if not material.empty:
+                material_status = "verified_public_material_reported"
+                material_detail = ";".join(sorted(set(material["material_accession_or_availability"]) - {""}))
+            elif not reported_material.empty:
+                material_status = "source_reviewed_material_not_stated_or_not_accessioned"
+                material_detail = ";".join(sorted(set(reported_material["material_accession_or_availability"]) - {""}))
+            else:
+                material_status = "not_curated_not_evidence_of_unavailability"
+                material_detail = ""
             rows.append({
                 "species": species,
                 "gene_id": candidate.gene_id,
@@ -123,6 +137,9 @@ def build_candidate_card_summaries() -> dict[str, int]:
                 "independent_evidence_categories": ";".join(categories),
                 "n_independent_evidence_categories": len(categories),
                 "direct_evidence_direction": direction,
+                "direct_LoF_evidence_status": direct_status,
+                "material_availability_status": material_status,
+                "material_accession_or_availability": material_detail,
                 "main_text_evidence_card_eligible": "yes" if len(categories) >= 2 else "no",
                 "evidence_ids": ";".join(records["evidence_id"].tolist()),
                 "candidate_resource_status": "prediction_only" if not categories else "independent_evidence_curated",
