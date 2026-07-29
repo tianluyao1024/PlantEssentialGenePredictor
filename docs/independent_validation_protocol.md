@@ -30,8 +30,9 @@ only when all of the following are true:
    knockout, insertional-mutant, CRISPR, RNAi, or equivalent genotype-to-
    phenotype observation. Functional annotation alone is not phenotype
    evidence.
-4. The source, stable accession/URL, release or publication date, assay type,
-   phenotype stage, and binary adjudication rule are recorded.
+4. The source, stable accession/URL, source-archive snapshot, release or
+   publication date, assay type, phenotype stage, binary adjudication rule,
+   curator decision and provenance-check status are recorded.
 5. The source is not one of the phenotype tables used to create the study
    registry. A source may only be considered if it provides a demonstrably
    independent record that was not ingested during label construction.

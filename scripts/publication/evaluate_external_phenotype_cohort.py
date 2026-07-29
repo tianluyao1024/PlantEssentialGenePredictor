@@ -31,6 +31,7 @@ REQUIRED = {
     "adjudication_rule", "independent_of_training_labels",
     "independent_of_pseudo_labels", "independent_of_model_features",
     "include_in_locked_cohort", "evidence_curator", "exclusion_reason",
+    "source_archive_snapshot", "curator_decision", "provenance_check_status",
 }
 PROHIBITED_REGISTRY_STATUS = {
     "known_label_used_in_study",
@@ -94,7 +95,12 @@ def main() -> None:
         invalid = ~cohort[field].str.lower().eq("yes")
         if invalid.any():
             raise ValueError(f"{field} must be yes for every included row: {cohort.loc[invalid, 'gene_id'].tolist()}")
-    provenance = ["evidence_source", "source_url_or_accession", "publication_or_release_date", "experimental_system", "mutant_or_assay", "phenotype_stage", "adjudication_rule", "evidence_curator"]
+    provenance = [
+        "evidence_source", "source_url_or_accession", "publication_or_release_date",
+        "experimental_system", "mutant_or_assay", "phenotype_stage",
+        "adjudication_rule", "evidence_curator", "source_archive_snapshot",
+        "curator_decision", "provenance_check_status",
+    ]
     missing_provenance = cohort[provenance].eq("").any(axis=1)
     if missing_provenance.any():
         raise ValueError("Included rows with incomplete provenance: " + ", ".join(cohort.loc[missing_provenance, "gene_id"]))

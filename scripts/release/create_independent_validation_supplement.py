@@ -16,8 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DESTINATION = Path(r"E:\PlantEssentialGenePredictor_Zenodo")
-PACKAGE = DESTINATION / "PlantEssentialGenePredictor_independent_validation_v1_2_2.zip"
-RELEASE_VERSION = "v1.2.2-independent-validation"
+PACKAGE = DESTINATION / "PlantEssentialGenePredictor_independent_validation_v1_2_3.zip"
+RELEASE_VERSION = "v1.2.3-independent-validation"
 
 FILES = [
     "README.md",
@@ -93,7 +93,7 @@ def main() -> None:
         "files": manifest,
     }
     readme = (
-        "# PlantEssentialGenePredictor v1.2.2 independent-evidence supplement\n\n"
+        "# PlantEssentialGenePredictor v1.2.3 independent-evidence supplement\n\n"
         "This package is an incremental supplement to Zenodo DOI 10.5281/zenodo.21387076. "
         "It does not include raw phenotype databases, protein-language-model weights, processed matrices or model binaries.\n\n"
         "The pre-registered external-cohort gate is intentionally enforced: the included Arabidopsis cohort has 16 records "

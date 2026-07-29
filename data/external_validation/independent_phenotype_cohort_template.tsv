@@ -1,3 +1,2 @@
-species	gene_id	essential_label	evidence_source	source_url_or_accession	publication_or_release_date	experimental_system	mutant_or_assay	phenotype_stage	adjudication_rule	independent_of_training_labels	independent_of_pseudo_labels	independent_of_model_features	include_in_locked_cohort	evidence_curator	exclusion_reason	curator_notes
-arabidopsis	ATXGXXXXX									no	no	no	no			
-rice	OsXXgXXXXXXX									no	no	no	no			
+species	gene_id	essential_label	evidence_source	source_url_or_accession	publication_or_release_date	experimental_system	mutant_or_assay	phenotype_stage	adjudication_rule	independent_of_training_labels	independent_of_pseudo_labels	independent_of_model_features	include_in_locked_cohort	evidence_curator	exclusion_reason	curator_notes	source_archive_snapshot	curator_decision	provenance_check_status
+arabidopsis	ATXGXXXXX									no	no	no	no						

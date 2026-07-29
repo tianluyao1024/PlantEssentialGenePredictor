@@ -33,10 +33,12 @@ completed without author confirmation.
   (`d5519b426a25b5f490dd756a38f54413f90af33a`). The subsequent
   `v1.2.2-independent-validation` tag adds explicit per-candidate material
   availability status without altering models, labels, predictions or splits.
+  `v1.2.3-independent-validation` additionally makes source snapshots and
+  curator decisions mandatory for future cohort rows.
 
 ## Must be completed before submission
 
-- [ ] Upload `PlantEssentialGenePredictor_independent_validation_v1_2_2.zip`
+- [ ] Upload `PlantEssentialGenePredictor_independent_validation_v1_2_3.zip`
   as a new Zenodo version containing the audited candidate tables,
   external-validation template/evaluator, Figure 7 source data and final
   release manifest. Record the new version DOI and archive DOI in the
