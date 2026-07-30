@@ -27,8 +27,11 @@ completed without author confirmation.
   only; no external AUC/AUPRC or threshold metric is reported.
 - [x] Create long-form independent-evidence cards and a summary that labels
   unsupported entries as prediction-only rather than validated candidates.
-- [x] Archive the current computational release at Zenodo DOI
-  `10.5281/zenodo.21387076` and host code at GitHub.
+- [x] Archive model/data assets and the independent-validation evidence
+  supplement on Zenodo v1.2.3, version DOI `10.5281/zenodo.21387076` and
+  concept DOI `10.5281/zenodo.21387075`.
+- [x] Host code and the lightweight independent-validation supplement in the
+  GitHub `v1.2.3-independent-validation` release.
 - [x] Tag the matching GitHub release: `v1.2.1-independent-validation`
   (`d5519b426a25b5f490dd756a38f54413f90af33a`). The subsequent
   `v1.2.2-independent-validation` tag adds explicit per-candidate material
@@ -38,11 +41,6 @@ completed without author confirmation.
 
 ## Must be completed before submission
 
-- [ ] Upload `PlantEssentialGenePredictor_independent_validation_v1_2_3.zip`
-  as a new Zenodo version containing the audited candidate tables,
-  external-validation template/evaluator, Figure 7 source data and final
-  release manifest. Record the new version DOI and archive DOI in the
-  manuscript.
 - [ ] Expand the independently curated cohort to the pre-registered minimum
   for either species (n >= 30 and at least 10 records per class) before adding
   any external AUC/AUPRC or threshold result. Do not use records that

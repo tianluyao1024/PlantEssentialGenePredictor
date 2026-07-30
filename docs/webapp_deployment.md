@@ -13,8 +13,7 @@ cd PlantEssentialGenePredictor
 pip install -r requirements.txt
 ```
 
-Download the Zenodo release, DOI `10.5281/zenodo.21387076`, and extract its
-contents into this repository root. The directories `models/`,
+Download the Zenodo release (version DOI `10.5281/zenodo.21387076`) and extract its contents into this repository root. The directories `models/`,
 `data/processed_features/`, `data/labels/` and `predictions/` must then exist.
 
 ## Configure raw FASTA prediction

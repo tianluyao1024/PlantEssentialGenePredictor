@@ -30,8 +30,7 @@ nearest-neighbour presentation.
 
 ## Required citation and versioning
 
-The current archive DOI is `10.5281/zenodo.21387076`. Before manuscript
-submission, upload the audited release assets as a new Zenodo version, add the
-version DOI and its matching GitHub commit hash here, and replace this note's
-placeholder in the manuscript data-availability statement.
-
+The current immutable archive DOI is `10.5281/zenodo.21387076` (v1.2.3); the
+concept DOI is `10.5281/zenodo.21387075`. The matching independent-validation
+GitHub tag is `v1.2.3-independent-validation` at commit
+`e1a2442c1140eed1f46674c7b05eb7faadc65e5f`.

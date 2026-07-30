@@ -5,7 +5,7 @@ layout separates code/models from pretrained PLM weights:
 
 ```text
 /opt/PlantEssentialGenePredictor/
-  PlantEssentialGenePredictor/       GitHub code plus extracted Zenodo artifact
+  PlantEssentialGenePredictor/       GitHub code plus extracted large model/data artifact
   plm_model_weights/                 ESM2, ProtBERT and ProtT5 weights
   raw_data/go-basic.obo              Optional GO hierarchy file
 ```
@@ -21,7 +21,7 @@ cd /opt/PlantEssentialGenePredictor
 git clone https://github.com/tianluyao1024/PlantEssentialGenePredictor.git
 ```
 
-Download the Zenodo artifact (DOI `10.5281/zenodo.21387076`) and extract its
+Download the Zenodo artifact (version DOI `10.5281/zenodo.21387076`) and extract its
 `models/`, `data/` and `predictions/` contents into:
 
 ```text

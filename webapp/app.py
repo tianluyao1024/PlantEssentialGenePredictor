@@ -450,6 +450,7 @@ with st.sidebar:
     st.header("Model status")
     st.success("Full 6751-feature model: available")
     st.success("Deployable profile models: available")
+    st.caption("Archive: [Zenodo v1.2.3](https://doi.org/10.5281/zenodo.21387076)")
 
 tabs = st.tabs(
     [

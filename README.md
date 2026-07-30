@@ -98,18 +98,15 @@ git clone https://github.com/tianluyao1024/PlantEssentialGenePredictor.git
 cd PlantEssentialGenePredictor
 ```
 
-Large artifacts are archived on Zenodo:
+The full model/data archive and the independent-validation evidence supplement
+are publicly archived on Zenodo, version `v1.2.3`:
 
 ```text
-DOI: 10.5281/zenodo.21387076
+Version DOI: 10.5281/zenodo.21387076
+Concept DOI: 10.5281/zenodo.21387075
 ```
 
-The prepared `v1.1-candidate-audit` supplement is staged for a Zenodo version
-update before manuscript submission. It contains the audited publication tables
-and independent-validation protocol, without duplicating raw databases or PLM
-weights. See `docs/zenodo_release.md`.
-
-Download the Zenodo artifact and extract it into the repository root so that
+Download the versioned Zenodo artifact and extract it into the repository root so that
 `models/`, `data/processed_features/`, `data/labels/` and `predictions/` are
 present.
 

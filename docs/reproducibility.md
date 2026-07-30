@@ -7,15 +7,16 @@ git clone https://github.com/tianluyao1024/PlantEssentialGenePredictor.git
 cd PlantEssentialGenePredictor
 ```
 
-## Download the Zenodo artifact
+## Obtain the large model/data artifact
 
-Download the archived model/data artifact from Zenodo:
+Download the large model/data archive and independent-validation supplement
+from Zenodo version v1.2.3:
 
 ```text
-DOI: 10.5281/zenodo.21387076
+Version DOI: 10.5281/zenodo.21387076
 ```
 
-Extract the artifact into the repository root. After extraction, these paths should exist:
+Extract the large artifact into the repository root. After extraction, these paths should exist:
 
 ```text
 models/

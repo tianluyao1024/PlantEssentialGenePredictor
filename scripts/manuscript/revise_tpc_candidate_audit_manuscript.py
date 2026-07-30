@@ -183,7 +183,7 @@ def main() -> None:
     availability = find_paragraph(doc, "Code, processed label tables")
     set_text(
         availability,
-        "Code, processed label tables, fixed train/validation/test splits, feature lists, trained model assets, genome-scale prediction tables and figure-generation scripts are available at https://github.com/tianluyao1024/PlantEssentialGenePredictor. The archived release is available from Zenodo (https://doi.org/10.5281/zenodo.21387076). The final submission archive will contain the source-screening ledger, curated-record audit, prelocked cohort status report, evidence-card tables, figure source data and frozen-input checksums. The web interface is available at https://plantessentialgene.com.",
+        "Code, lightweight release tables, fixed train/validation/test splits, feature lists and figure-generation scripts are available at https://github.com/tianluyao1024/PlantEssentialGenePredictor, including the frozen independent-validation supplement at https://github.com/tianluyao1024/PlantEssentialGenePredictor/releases/tag/v1.2.3-independent-validation. Processed feature matrices, trained model assets, complete genome-scale prediction tables, source-screening ledgers, curated-record audits, prelocked cohort status reports, evidence-card tables, figure source data and frozen-input checksums are archived on Zenodo v1.2.3 (https://doi.org/10.5281/zenodo.21387076; concept DOI https://doi.org/10.5281/zenodo.21387075). The web interface is available at https://plantessentialgene.com.",
     )
 
     # Insert a concise supplementary-data list before the reference heading.

@@ -21,7 +21,8 @@
 - [x] Main model directories are included in the Zenodo artifact.
 - [x] Deployable feature-profile models are included in the Zenodo artifact.
 - [ ] GitHub code repository is pushed.
-- [ ] Zenodo deposition is published and DOI is inserted into README and manuscript.
+- [x] Zenodo deposition is published: version DOI `10.5281/zenodo.21387076`;
+  concept DOI `10.5281/zenodo.21387075`.
 
 ## Manuscript reproducibility
 

@@ -42,23 +42,27 @@ Do not upload:
 
 ## DOI handling
 
-The published Zenodo DOI is:
+The release was publicly verified through DOI.org and the Zenodo API on
+2026-07-30. Cite the immutable version DOI in the manuscript; use the concept
+DOI only when a link to the latest version is desired.
 
 ```text
-10.5281/zenodo.21387076
+Concept DOI: 10.5281/zenodo.21387075
+Version DOI: 10.5281/zenodo.21387076
 ```
 
 ## Required v1.2 independent-evidence update
 
-Before manuscript submission, create a new version of the existing Zenodo
-record and retain the original base artifact. Generate and add the prepared
-supplement:
+The published v1.2.3 record contains the base artifact and independent-evidence
+supplement. For future changes, create a new version of the existing record and
+retain the current version as an immutable archive. Generate any updated
+supplement with:
 
 ```text
 python scripts/release/create_independent_validation_supplement.py
 ```
 
-The generated `PlantEssentialGenePredictor_independent_validation_v1_2.zip`
+The generated `PlantEssentialGenePredictor_independent_validation_v1_2_3.zip`
 contains the source-screening ledger, curator-checked direct loss-of-function
 records, zero-overlap audit, prelocked external-cohort status, evidence-card
 tables, Figure 7 source data and the scripts required to reproduce the audit.
@@ -67,8 +71,8 @@ binaries. Its SHA256 checksum and per-file manifest are written into the zip.
 After publishing the new version, update the README, manuscript and release
 notes with both the immutable version DOI and the concept DOI.
 
-This DOI is referenced in `README.md` and in the manuscript data availability
-statement.
+The lightweight supplement is additionally mirrored in the GitHub
+[v1.2.3 release](https://github.com/tianluyao1024/PlantEssentialGenePredictor/releases/tag/v1.2.3-independent-validation).
 
 ## Manuscript wording
 
@@ -77,7 +81,7 @@ Suggested Data availability wording:
 > Source code, documentation and the Streamlit web application are available at
 > GitHub: https://github.com/tianluyao1024/PlantEssentialGenePredictor.
 > Processed feature matrices, trained model objects, fixed label tables and
-> genome-scale prediction tables are archived on Zenodo under DOI:
-> 10.5281/zenodo.21387076.
+> genome-scale prediction tables are archived on Zenodo, version v1.2.3,
+> https://doi.org/10.5281/zenodo.21387076.
 
 
