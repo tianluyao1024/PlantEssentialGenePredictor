@@ -24,3 +24,10 @@ webapp_data/*.pid
 !webapp_data/jobs/.gitkeep
 !webapp_data/public_predictions/.gitkeep
 *.log
+# Private manuscript and submission working files
+Nature_revision_output/
+private_internal_archive/
+tmp/
+release_packages/PlantEssentialGenePredictor_TPJ_*
+scripts/manuscript/revise_*manuscript*.py
+scripts/manuscript/update_manuscript*.py
