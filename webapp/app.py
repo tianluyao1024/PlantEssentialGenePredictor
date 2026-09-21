@@ -141,9 +141,10 @@ with predict_tab:
     st.write("Each button runs the released species and joint models on 100 bundled genes. These examples test the workflow; they are not validation cohorts.")
     for species, column in zip(["arabidopsis", "rice"], st.columns(2)):
         with column, st.container(border=True):
-            st.markdown("### " + ("Arabidopsis" if species == "arabidopsis" else "Rice"))
+            species_name = "Arabidopsis" if species == "arabidopsis" else "Rice"
+            st.markdown("### " + species_name)
             st.caption("100 curated reference candidates · species + joint models")
-            if st.button("Run " + species.capitalize() + " example", key=species):
+            if st.button("Try " + species_name + " demo", key=species, type="primary"):
                 try:
                     token = submit("demo", species)
                 except ValueError as exc:
