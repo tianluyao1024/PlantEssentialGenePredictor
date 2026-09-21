@@ -97,7 +97,7 @@ class PrivateJobTests(unittest.TestCase):
 
     def test_ui_landing_and_result_route(self):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(str(ROOT / "webapp/nar_app.py"), default_timeout=30).run()
+        app = AppTest.from_file(str(ROOT / "webapp/app.py"), default_timeout=30).run()
         self.assertEqual(len(app.exception), 0)
         self.assertTrue(any("PlantEGP" in x.value for x in app.markdown))
         app.query_params["job"] = "../../invalid"
