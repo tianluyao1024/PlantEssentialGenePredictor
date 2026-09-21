@@ -1,8 +1,8 @@
 # PlantEGP NAR-oriented web server entry point
 
-The public NAR-oriented interface is `webapp/nar_app.py`. It is separate from
-the legacy `webapp/app.py` interface so that deployment and review can use a
-well-defined entry point.
+The public NAR-oriented interface is `webapp/app.py`, which delegates to
+`webapp/nar_app.py`. The prior interface is retained as `webapp/legacy_app.py`
+for audit and rollback; it is not the public NAR entry point.
 
 ## User workflow
 
