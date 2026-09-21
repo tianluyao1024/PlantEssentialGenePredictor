@@ -16,6 +16,7 @@ plm_model_weights/
 
 webapp/_uploaded_features.npz
 webapp_data/jobs/*
+webapp_data/nar_reference/
 webapp_data/public_predictions/*
 webapp_data/logs/
 webapp_data/reference_proteomes/
