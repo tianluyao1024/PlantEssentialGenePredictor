@@ -32,8 +32,10 @@ examples test reproducibility rather than independent biological validation.
 Jobs are stored under a private, token-named directory. Raw uploads and
 intermediate files for terminal jobs are removed after 24 hours; reports remain
 for seven days and then the terminal job directory is removed. Queued and
-running jobs are excluded from automatic deletion. The app never lists job
-directories to users and does not display server filesystem paths.
+running jobs are excluded from automatic deletion. The hourly Windows task
+`PlantEGP-NAR-Cleanup` runs `scripts/webapp/cleanup_nar_jobs.py`; install or
+refresh it with `scripts/webapp/install_nar_cleanup_task.ps1`. The app never
+lists job directories to users and does not display server filesystem paths.
 
 ## Deployment assets
 
@@ -61,8 +63,11 @@ D:\Python\Python311\python.exe scripts\reproducibility\test_nar_preview.py
 
 The test suite covers job-token validation, input validation, private reports,
 queue admission, retention cleanup, recovery liveness, worked-result rendering
-and optional homology-search failure handling. Before publication, perform a
-fresh public-browser test of both worked examples and every download action.
+and optional homology-search failure handling. A stable, bundled Arabidopsis
+example result is created by `scripts/webapp/create_public_example.py` and is
+intentionally retained; it contains no user submission. Before publication,
+perform a fresh public-browser test of both worked examples and every download
+action.
 
 ## License and support
 

@@ -46,7 +46,7 @@ def apply_style():
 
 def hero(compact=False):
     markup = """<div class="eg-hero">
-    <div class="eg-brand">PLANT FUNCTIONAL GENOMICS · RESEARCH PREVIEW</div>
+    <div class="eg-brand">PLANT FUNCTIONAL GENOMICS · WEB SERVER</div>
     <h1>PlantEGP</h1>
     <p>From protein sequences to informed experiments.<br>Explore gene priorities with the evidence in view.</p>
     <div class="eg-pills"><span>Arabidopsis thaliana</span><span>Oryza sativa</span><span>No account required</span><span>Private analysis</span></div>

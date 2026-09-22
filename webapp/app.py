@@ -1,4 +1,4 @@
-"""NAR-oriented preview; run: streamlit run webapp/nar_app.py"""
+"""PlantEGP web server; run: streamlit run webapp/app.py"""
 from __future__ import annotations
 
 import io
@@ -10,10 +10,13 @@ import altair as alt
 from nar_style import apply_style, hero
 from nar_jobs import FILES, PROCESSED, RAW, ROOT, job_path, read_state, reference, submit
 
+PUBLIC_EXAMPLE_TOKEN = "PlantEGP_demo_Arabidopsis_00000000000000000"
+
 st.set_page_config(page_title="PlantEGP", page_icon="🌱", layout="wide")
 apply_style()
 hero(compact="job" in st.query_params)
 st.caption("Evidence-aware severe loss-of-function prioritization · [MIT license](https://github.com/tianluyao1024/PlantEssentialGenePredictor/blob/main/LICENSE)")
+st.markdown(f"[View an instant Arabidopsis example output](?job={PUBLIC_EXAMPLE_TOKEN})")
 
 
 @st.fragment(run_every=5)
@@ -159,7 +162,7 @@ with predict_tab:
     st.subheader("Analyze your protein sequences")
     st.caption("Basic mode needs only protein FASTA. Advanced files are optional; the matching released model profile is detected automatically.")
     species = st.selectbox("Organism", ["arabidopsis", "rice"])
-    protein = st.file_uploader("Protein FASTA", type=["fasta", "fa", "faa"], help="One unique protein per gene; 1-100 sequences in this preview.")
+    protein = st.file_uploader("Protein FASTA", type=["fasta", "fa", "faa"], help="One unique protein per gene; 1-100 sequences per submission.")
     uploads = {"protein": protein.getvalue()} if protein else {}
     with st.expander("Advanced: add sequence and functional annotations"):
         st.write("The server selects the matching model profile automatically. Missing features use the model's fitted imputer; absent annotation does not establish absence of biological function.")
@@ -172,7 +175,7 @@ with predict_tab:
             item = st.file_uploader(label, type=extensions, key=key)
             if item:
                 uploads[key] = item.getvalue()
-    st.caption("Public beta · 1–100 proteins, at most 10,000 residues each; protein FASTA up to 10 MB and all files together up to 50 MB. Up to 3 jobs may run or wait; one computes at a time. Do not submit confidential data.")
+    st.caption("Free web server · no account required · 1–100 proteins, at most 10,000 residues each; protein FASTA up to 10 MB and all files together up to 50 MB. Up to 3 jobs may run or wait; one computes at a time. Do not submit confidential data.")
     if st.button("Submit private prediction", disabled=not protein, type="primary"):
         try:
             token = submit("raw", species, uploads)
@@ -199,11 +202,13 @@ Start with protein FASTA. Optional files must use matching gene identifiers and 
 ### How to interpret a result
 The prioritization score ranks a gene for experimental follow-up under the original severe loss-of-function evidence definition; it is not a probability of essentiality. Within-query percentile and priority band compare only genes in the submitted job. A top-priority band means the highest 1% of that submitted batch, and does not provide a biological threshold. Model agreement is displayed only for worked examples that ran two released models. Annotation completeness records supplied feature coverage, while a homology hit reports protein similarity and reference-label context only. Neither field proves a phenotype.
 
+[View the interactive Arabidopsis example output](?job=PlantEGP_demo_Arabidopsis_00000000000000000).
+
 ### Evidence and applicability
 The reference registry distinguishes study labels, pseudo-labels, excluded phenotype records and candidates absent from the audited sources. This release is trained on Arabidopsis and rice. A held-out source tests distribution shift; a worked example tests reproducibility. Neither is a prospective validation cohort. The historical external cohort contains 16 Arabidopsis genes (9 E, 7 NE). The current eligibility audit excludes eight (3 E, 5 NE) because of overlap with archived phenotype sources; eight (6 E, 2 NE) remain pending verification of feature independence and selection without model scores. Zero records are currently approved for quantitative independent validation. Source overlap does not by itself establish use in model training. No rice locked cohort or prospective accuracy claim is presented here.
 
 ### Privacy and availability
-This preview stores inputs and results on the host, accessible through an unguessable private link. Sharing the link grants access. Nothing is added to a public dataset. There is no registration or email requirement. The application adds no advertising or analytics scripts; Streamlit usage reporting is disabled in the project configuration. Production cookies and network traffic still require deployment inspection.
+The server stores inputs and results on the host, accessible through an unguessable private link. Sharing the link grants access. Nothing is added to a public dataset. There is no registration or email requirement. The application adds no advertising or analytics scripts; Streamlit usage reporting is disabled in the project configuration.
 
-This public beta stores inputs and intermediate files privately for up to 24 hours after a completed or failed job, then removes them. Downloadable reports remain available for up to 7 days after completion or failure, then the full job is removed. Jobs still queued or running are never removed automatically. Sharing a private result link grants access. An interrupted worker may require administrator recovery. For support or a deletion request, contact yyngmc@gmail.com and identify your job. Do not submit confidential data. Publication readiness and unattended recovery remain under review.
+The server stores inputs and intermediate files privately for up to 24 hours after a completed or failed job, then removes them. Downloadable reports remain available for up to 7 days after completion or failure, then the full job is removed. Jobs still queued or running are never removed automatically. Sharing a private result link grants access. An interrupted worker may require administrator recovery. For support or a deletion request, contact yyngmc@gmail.com and identify your job. Do not submit confidential data.
 """)

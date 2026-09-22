@@ -78,6 +78,10 @@ def cleanup_expired_jobs(now: float | None = None) -> dict[str, int]:
             continue
         if state.get("state") not in {"complete", "failed"}:
             continue
+        # Only bundled, explicitly designated examples may outlive the normal
+        # retention policy. User-submitted jobs can never set this field.
+        if state.get("kind") == "demo" and state.get("public_example") is True:
+            continue
         finished = state.get("completed_unix", state.get("submitted_unix", now))
         age = now - finished
         if age >= JOB_RETENTION_SECONDS:

@@ -62,6 +62,18 @@ class PrivateJobTests(unittest.TestCase):
             self.assertEqual(jobs.cleanup_expired_jobs()['jobs'],1)
             self.assertFalse(path.exists())
 
+    def test_retention_preserves_only_explicit_bundled_public_example(self):
+        import time
+        with tempfile.TemporaryDirectory() as temp, patch.object(jobs,'JOBS',Path(temp)):
+            token=jobs.submit('demo','rice',launch=False)
+            path=jobs.job_path(token)
+            state=jobs.read_state(token)
+            state.update(state='complete', completed_unix=time.time()-jobs.JOB_RETENTION_SECONDS-1,
+                         public_example=True)
+            jobs.save_state(path,state)
+            self.assertEqual(jobs.cleanup_expired_jobs(),{'inputs':0,'jobs':0})
+            self.assertTrue(path.exists())
+
     def test_traversal_and_unknown_links(self):
         for token in ["../state.json", "a" * 42, "a" * 44, "a/" * 22]:
             with self.assertRaises(ValueError):
